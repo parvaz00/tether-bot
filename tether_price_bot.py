@@ -1,16 +1,10 @@
 """
-ربات تلگرام اعلام قیمت تتر (USDT)
+ربات تلگرام اعلام قیمت تتر + طلای ۱۸ عیار + انس جهانی طلا
 این نسخه برای اجرا با GitHub Actions هست: هر بار که اجرا می‌شه،
-یک پیام می‌فرسته و تموم می‌شه. زمان‌بندی (هر ۴ ساعت) رو خود
-GitHub Actions (فایل .github/workflows/tether-price.yml) انجام می‌ده.
+یک پیام می‌فرسته و تموم می‌شه. زمان‌بندی رو خود GitHub Actions
+(فایل .github/workflows/tether-price.yml) انجام می‌ده.
 
-توکن، chat id و کلید BrsApi از "GitHub Secrets" خونده می‌شن، نه از
-خود فایل، چون این ریپازیتوری Public هست.
-
-منبع قیمت تومانی: BrsApi.ir (یک سرویس اطلاع‌رسانی عمومی قیمت طلا/ارز/
-رمزارز، نه یک صرافی) که باید از سرورهای GitHub Actions در دسترس باشه.
-اگه به هر دلیلی این منبع کار نکرد، به‌صورت خودکار قیمت تومانی خالی
-گذاشته می‌شه ولی قیمت دلاری همچنان ارسال می‌شه.
+توکن، chat id و کلید BrsApi از "GitHub Secrets" خونده می‌شن.
 """
 
 import os
@@ -20,6 +14,13 @@ from datetime import datetime
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 CHAT_ID = os.environ.get("CHAT_ID")
 BRSAPI_KEY = os.environ.get("BRSAPI_KEY")
+
+BRSAPI_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+    "Accept": "application/json, text/plain, */*",
+}
+
+_brsapi_cache = None  # برای اینکه فقط یک‌بار درخواست به BrsApi بزنیم
 
 
 def get_usd_price():
@@ -35,29 +36,21 @@ def get_usd_price():
         return None
 
 
-def get_toman_price_from_brsapi():
-    """
-    گرفتن قیمت تومانی تتر از BrsApi.ir
-    این تابع چند حالت مختلف از ساختار JSON رو امتحان می‌کنه، چون
-    ساختار دقیق پاسخ ممکنه کمی متفاوت باشه.
-    """
+def get_brsapi_data():
+    """گرفتن و کش کردن کل پاسخ BrsApi (شامل ارز، طلا و رمزارز)"""
+    global _brsapi_cache
+    if _brsapi_cache is not None:
+        return _brsapi_cache
     if not BRSAPI_KEY:
         print("خطا: BRSAPI_KEY تنظیم نشده")
         return None
     try:
         url = "https://Api.BrsApi.ir/Market/Gold_Currency.php"
         params = {"key": BRSAPI_KEY}
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-            "Accept": "application/json, text/plain, */*",
-        }
-        response = requests.get(url, params=params, headers=headers, timeout=15)
+        response = requests.get(url, params=params, headers=BRSAPI_HEADERS, timeout=15)
         data = response.json()
-
-        # چاپ کامل پاسخ خام تو لاگ، تا در صورت خطا بشه ساختار دقیق رو دید
         print("پاسخ خام BrsApi:", data)
 
-        # ممکنه دیتا به شکل یه دیکشنری با کلید cryptocurrency باشه یا یه لیست ساده
         candidates = []
         if isinstance(data, dict):
             for value in data.values():
@@ -66,22 +59,66 @@ def get_toman_price_from_brsapi():
         elif isinstance(data, list):
             candidates = data
 
-        for item in candidates:
-            if not isinstance(item, dict):
-                continue
-            symbol = str(item.get("symbol", "")).upper()
-            name = str(item.get("name", "")).lower()
-            name_en = str(item.get("name_en", "")).lower()
-            if "USDT" in symbol or "تتر" in name or "tether" in name_en:
-                price = item.get("price") or item.get("price_toman") or item.get("close")
-                if price:
-                    return round(float(price))
-
-        print("تتر تو پاسخ BrsApi پیدا نشد.")
-        return None
+        _brsapi_cache = candidates
+        return candidates
     except Exception as e:
-        print(f"خطا در گرفتن قیمت تومانی از BrsApi: {e}")
+        print(f"خطا در گرفتن اطلاعات از BrsApi: {e}")
         return None
+
+
+def find_price(candidates, symbol_keywords=None, name_keywords=None):
+    """پیدا کردن قیمت یک آیتم بر اساس نماد یا اسم، تو لیست داده‌های BrsApi"""
+    if not candidates:
+        return None
+    symbol_keywords = [s.upper() for s in (symbol_keywords or [])]
+    name_keywords = name_keywords or []
+
+    for item in candidates:
+        if not isinstance(item, dict):
+            continue
+        symbol = str(item.get("symbol", "")).upper()
+        name = str(item.get("name", ""))
+        name_en = str(item.get("name_en", "")).lower()
+
+        symbol_match = any(k in symbol for k in symbol_keywords)
+        name_match = any(k in name or k.lower() in name_en for k in name_keywords)
+
+        if symbol_match or name_match:
+            price = item.get("price") or item.get("price_toman") or item.get("close")
+            if price:
+                try:
+                    return round(float(price))
+                except (TypeError, ValueError):
+                    continue
+    return None
+
+
+def get_toman_price(usd_price):
+    """قیمت تومانی تتر"""
+    if usd_price is None:
+        return None
+    candidates = get_brsapi_data()
+    return find_price(candidates, symbol_keywords=["USDT"], name_keywords=["تتر", "Tether"])
+
+
+def get_gold_18k_price():
+    """قیمت طلای ۱۸ عیار (هر گرم، به تومان)"""
+    candidates = get_brsapi_data()
+    return find_price(
+        candidates,
+        symbol_keywords=["IR_GOLD_18K", "GERAM18", "GOLD18"],
+        name_keywords=["طلای 18 عیار", "طلا 18 عیار", "18 عیار", "18K Gold"],
+    )
+
+
+def get_gold_ounce_price():
+    """قیمت انس جهانی طلا (به دلار)"""
+    candidates = get_brsapi_data()
+    return find_price(
+        candidates,
+        symbol_keywords=["XAUUSD", "XAU", "ONS"],
+        name_keywords=["انس طلا", "انس جهانی", "Gold Ounce"],
+    )
 
 
 def send_telegram_message(text):
@@ -102,20 +139,32 @@ def build_and_send_report():
         return
 
     usd_price = get_usd_price()
-    toman_price = get_toman_price_from_brsapi()
+    toman_price = get_toman_price(usd_price)
+    gold18_price = get_gold_18k_price()
+    ounce_price = get_gold_ounce_price()
     now = datetime.now().strftime("%Y-%m-%d %H:%M")
 
-    message = f"📊 <b>گزارش قیمت تتر</b>\n🕒 {now}\n\n"
+    message = f"📊 <b>گزارش بازار</b>\n🕒 {now}\n\n"
 
+    message += "💠 <b>تتر (USDT)</b>\n"
     if usd_price is not None:
-        message += f"💵 قیمت دلاری: <b>{usd_price}$</b>\n"
+        message += f"💵 دلاری: <b>{usd_price}$</b>\n"
     else:
-        message += "💵 قیمت دلاری: دریافت نشد\n"
-
+        message += "💵 دلاری: دریافت نشد\n"
     if toman_price is not None:
-        message += f"💰 قیمت تومانی: <b>{toman_price:,} تومان</b>\n"
+        message += f"💰 تومانی: <b>{toman_price:,} تومان</b>\n"
     else:
-        message += "💰 قیمت تومانی: دریافت نشد\n"
+        message += "💰 تومانی: دریافت نشد\n"
+
+    message += "\n🥇 <b>طلا</b>\n"
+    if gold18_price is not None:
+        message += f"🔸 هر گرم طلای ۱۸ عیار: <b>{gold18_price:,} تومان</b>\n"
+    else:
+        message += "🔸 طلای ۱۸ عیار: دریافت نشد\n"
+    if ounce_price is not None:
+        message += f"🔸 انس جهانی طلا: <b>{ounce_price:,}$</b>\n"
+    else:
+        message += "🔸 انس جهانی طلا: دریافت نشد\n"
 
     send_telegram_message(message)
     print(f"[{now}] پیام ارسال شد.")
