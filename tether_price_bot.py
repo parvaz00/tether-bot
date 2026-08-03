@@ -4,12 +4,13 @@
 یک پیام می‌فرسته و تموم می‌شه. زمان‌بندی (هر ۴ ساعت) رو خود
 GitHub Actions (فایل .github/workflows/tether-price.yml) انجام می‌ده.
 
-توکن و chat id از "GitHub Secrets" خونده می‌شن، نه از خود فایل،
-چون این ریپازیتوری Public هست و نباید توکن واقعی توش دیده بشه.
+توکن، chat id و کلید BrsApi از "GitHub Secrets" خونده می‌شن، نه از
+خود فایل، چون این ریپازیتوری Public هست.
 
-نکته: چون سرورهای GitHub Actions نمی‌تونن به Nobitex وصل بشن،
-قیمت تومانی به‌صورت تقریبی از نرخ جهانی دلار/ریال محاسبه می‌شه
-(ممکنه با قیمت واقعی بازار آزاد ایران کمی فرق داشته باشه).
+منبع قیمت تومانی: BrsApi.ir (یک سرویس اطلاع‌رسانی عمومی قیمت طلا/ارز/
+رمزارز، نه یک صرافی) که باید از سرورهای GitHub Actions در دسترس باشه.
+اگه به هر دلیلی این منبع کار نکرد، به‌صورت خودکار قیمت تومانی خالی
+گذاشته می‌شه ولی قیمت دلاری همچنان ارسال می‌شه.
 """
 
 import os
@@ -18,6 +19,7 @@ from datetime import datetime
 
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 CHAT_ID = os.environ.get("CHAT_ID")
+BRSAPI_KEY = os.environ.get("BRSAPI_KEY")
 
 
 def get_usd_price():
@@ -33,22 +35,48 @@ def get_usd_price():
         return None
 
 
-def get_toman_price(usd_price):
+def get_toman_price_from_brsapi():
     """
-    محاسبه‌ی تقریبی قیمت تتر به تومان، با استفاده از نرخ جهانی دلار/ریال
-    (چون Nobitex از سرورهای GitHub Actions در دسترس نیست)
+    گرفتن قیمت تومانی تتر از BrsApi.ir
+    این تابع چند حالت مختلف از ساختار JSON رو امتحان می‌کنه، چون
+    ساختار دقیق پاسخ ممکنه کمی متفاوت باشه.
     """
-    if usd_price is None:
+    if not BRSAPI_KEY:
+        print("خطا: BRSAPI_KEY تنظیم نشده")
         return None
     try:
-        url = "https://open.er-api.com/v6/latest/USD"
-        response = requests.get(url, timeout=10)
+        url = "https://Api.BrsApi.ir/Market/Gold_Currency.php"
+        params = {"key": BRSAPI_KEY}
+        response = requests.get(url, params=params, timeout=15)
         data = response.json()
-        usd_to_rial = data["rates"]["IRR"]
-        usd_to_toman = usd_to_rial / 10  # تبدیل ریال به تومان
-        return round(usd_price * usd_to_toman)
+
+        # چاپ کامل پاسخ خام تو لاگ، تا در صورت خطا بشه ساختار دقیق رو دید
+        print("پاسخ خام BrsApi:", data)
+
+        # ممکنه دیتا به شکل یه دیکشنری با کلید cryptocurrency باشه یا یه لیست ساده
+        candidates = []
+        if isinstance(data, dict):
+            for value in data.values():
+                if isinstance(value, list):
+                    candidates.extend(value)
+        elif isinstance(data, list):
+            candidates = data
+
+        for item in candidates:
+            if not isinstance(item, dict):
+                continue
+            symbol = str(item.get("symbol", "")).upper()
+            name = str(item.get("name", "")).lower()
+            name_en = str(item.get("name_en", "")).lower()
+            if "USDT" in symbol or "تتر" in name or "tether" in name_en:
+                price = item.get("price") or item.get("price_toman") or item.get("close")
+                if price:
+                    return round(float(price))
+
+        print("تتر تو پاسخ BrsApi پیدا نشد.")
+        return None
     except Exception as e:
-        print(f"خطا در گرفتن قیمت تومانی: {e}")
+        print(f"خطا در گرفتن قیمت تومانی از BrsApi: {e}")
         return None
 
 
@@ -70,7 +98,7 @@ def build_and_send_report():
         return
 
     usd_price = get_usd_price()
-    toman_price = get_toman_price(usd_price)
+    toman_price = get_toman_price_from_brsapi()
     now = datetime.now().strftime("%Y-%m-%d %H:%M")
 
     message = f"📊 <b>گزارش قیمت تتر</b>\n🕒 {now}\n\n"
@@ -81,7 +109,7 @@ def build_and_send_report():
         message += "💵 قیمت دلاری: دریافت نشد\n"
 
     if toman_price is not None:
-        message += f"💰 قیمت تومانی (تقریبی): <b>{toman_price:,} تومان</b>\n"
+        message += f"💰 قیمت تومانی: <b>{toman_price:,} تومان</b>\n"
     else:
         message += "💰 قیمت تومانی: دریافت نشد\n"
 
