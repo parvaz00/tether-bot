@@ -47,7 +47,11 @@ def get_toman_price_from_brsapi():
     try:
         url = "https://Api.BrsApi.ir/Market/Gold_Currency.php"
         params = {"key": BRSAPI_KEY}
-        response = requests.get(url, params=params, timeout=15)
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+            "Accept": "application/json, text/plain, */*",
+        }
+        response = requests.get(url, params=params, headers=headers, timeout=15)
         data = response.json()
 
         # چاپ کامل پاسخ خام تو لاگ، تا در صورت خطا بشه ساختار دقیق رو دید
