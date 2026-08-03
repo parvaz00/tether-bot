@@ -6,6 +6,10 @@ GitHub Actions (فایل .github/workflows/tether-price.yml) انجام می‌�
 
 توکن و chat id از "GitHub Secrets" خونده می‌شن، نه از خود فایل،
 چون این ریپازیتوری Public هست و نباید توکن واقعی توش دیده بشه.
+
+نکته: چون سرورهای GitHub Actions نمی‌تونن به Nobitex وصل بشن،
+قیمت تومانی به‌صورت تقریبی از نرخ جهانی دلار/ریال محاسبه می‌شه
+(ممکنه با قیمت واقعی بازار آزاد ایران کمی فرق داشته باشه).
 """
 
 import os
@@ -29,16 +33,20 @@ def get_usd_price():
         return None
 
 
-def get_toman_price():
-    """گرفتن قیمت تومانی تتر از نوبیتکس"""
+def get_toman_price(usd_price):
+    """
+    محاسبه‌ی تقریبی قیمت تتر به تومان، با استفاده از نرخ جهانی دلار/ریال
+    (چون Nobitex از سرورهای GitHub Actions در دسترس نیست)
+    """
+    if usd_price is None:
+        return None
     try:
-        url = "https://api.nobitex.ir/market/stats"
-        params = {"srcCurrency": "usdt", "dstCurrency": "rls"}
-        response = requests.get(url, params=params, timeout=10)
+        url = "https://open.er-api.com/v6/latest/USD"
+        response = requests.get(url, timeout=10)
         data = response.json()
-        rial_price = float(data["stats"]["usdt-rls"]["latest"])
-        toman_price = rial_price / 10  # تبدیل ریال به تومان
-        return round(toman_price)
+        usd_to_rial = data["rates"]["IRR"]
+        usd_to_toman = usd_to_rial / 10  # تبدیل ریال به تومان
+        return round(usd_price * usd_to_toman)
     except Exception as e:
         print(f"خطا در گرفتن قیمت تومانی: {e}")
         return None
@@ -62,7 +70,7 @@ def build_and_send_report():
         return
 
     usd_price = get_usd_price()
-    toman_price = get_toman_price()
+    toman_price = get_toman_price(usd_price)
     now = datetime.now().strftime("%Y-%m-%d %H:%M")
 
     message = f"📊 <b>گزارش قیمت تتر</b>\n🕒 {now}\n\n"
@@ -73,7 +81,7 @@ def build_and_send_report():
         message += "💵 قیمت دلاری: دریافت نشد\n"
 
     if toman_price is not None:
-        message += f"💰 قیمت تومانی (نوبیتکس): <b>{toman_price:,} تومان</b>\n"
+        message += f"💰 قیمت تومانی (تقریبی): <b>{toman_price:,} تومان</b>\n"
     else:
         message += "💰 قیمت تومانی: دریافت نشد\n"
 
