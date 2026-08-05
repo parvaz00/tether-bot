@@ -1,7 +1,7 @@
 """
-ربات تلگرام اعلام قیمت تتر + طلای ۱۸ عیار + انس جهانی طلا
+ربات تلگرام اعلام قیمت تتر + طلای ۱۸ عیار + انس جهانی طلا (به‌صورت تصویر جدولی)
 این نسخه برای اجرا با GitHub Actions هست: هر بار که اجرا می‌شه،
-یک پیام می‌فرسته و تموم می‌شه. زمان‌بندی رو خود GitHub Actions
+یک عکس می‌سازه و می‌فرسته و تموم می‌شه. زمان‌بندی رو خود GitHub Actions
 (فایل .github/workflows/tether-price.yml) انجام می‌ده.
 
 توکن، chat id و کلید BrsApi از "GitHub Secrets" خونده می‌شن.
@@ -10,6 +10,8 @@
 import os
 import requests
 from datetime import datetime
+
+from generate_image import build_report_image, image_to_bytes
 
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 CHAT_ID = os.environ.get("CHAT_ID")
@@ -20,7 +22,7 @@ BRSAPI_HEADERS = {
     "Accept": "application/json, text/plain, */*",
 }
 
-_brsapi_cache = None  # برای اینکه فقط یک‌بار درخواست به BrsApi بزنیم
+_brsapi_cache = None
 
 
 def get_usd_price():
@@ -37,7 +39,6 @@ def get_usd_price():
 
 
 def get_brsapi_data():
-    """گرفتن و کش کردن کل پاسخ BrsApi (شامل ارز، طلا و رمزارز)"""
     global _brsapi_cache
     if _brsapi_cache is not None:
         return _brsapi_cache
@@ -67,7 +68,6 @@ def get_brsapi_data():
 
 
 def find_price(candidates, symbol_keywords=None, name_keywords=None):
-    """پیدا کردن قیمت یک آیتم بر اساس نماد یا اسم، تو لیست داده‌های BrsApi"""
     if not candidates:
         return None
     symbol_keywords = [s.upper() for s in (symbol_keywords or [])]
@@ -94,7 +94,6 @@ def find_price(candidates, symbol_keywords=None, name_keywords=None):
 
 
 def get_toman_price(usd_price):
-    """قیمت تومانی تتر"""
     if usd_price is None:
         return None
     candidates = get_brsapi_data()
@@ -102,7 +101,6 @@ def get_toman_price(usd_price):
 
 
 def get_gold_18k_price():
-    """قیمت طلای ۱۸ عیار (هر گرم، به تومان)"""
     candidates = get_brsapi_data()
     return find_price(
         candidates,
@@ -112,7 +110,6 @@ def get_gold_18k_price():
 
 
 def get_gold_ounce_price():
-    """قیمت انس جهانی طلا (به دلار)"""
     candidates = get_brsapi_data()
     return find_price(
         candidates,
@@ -121,16 +118,19 @@ def get_gold_ounce_price():
     )
 
 
-def send_telegram_message(text):
-    """ارسال پیام به تلگرام"""
-    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-    payload = {"chat_id": CHAT_ID, "text": text, "parse_mode": "HTML"}
+def send_telegram_photo(image_bytes, caption=""):
+    """ارسال عکس به تلگرام"""
+    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendPhoto"
+    files = {"photo": ("report.png", image_bytes, "image/png")}
+    data = {"chat_id": CHAT_ID, "caption": caption}
     try:
-        response = requests.post(url, data=payload, timeout=10)
+        response = requests.post(url, data=data, files=files, timeout=20)
         if response.status_code != 200:
-            print(f"خطا در ارسال پیام: {response.text}")
+            print(f"خطا در ارسال عکس: {response.text}")
+        else:
+            print("عکس با موفقیت ارسال شد.")
     except Exception as e:
-        print(f"خطا در ارسال پیام: {e}")
+        print(f"خطا در ارسال عکس: {e}")
 
 
 def build_and_send_report():
@@ -142,32 +142,13 @@ def build_and_send_report():
     toman_price = get_toman_price(usd_price)
     gold18_price = get_gold_18k_price()
     ounce_price = get_gold_ounce_price()
+
+    img = build_report_image(usd_price, toman_price, gold18_price, ounce_price)
+    img_bytes = image_to_bytes(img)
+
+    send_telegram_photo(img_bytes)
     now = datetime.now().strftime("%Y-%m-%d %H:%M")
-
-    message = f"📊 <b>گزارش بازار</b>\n🕒 {now}\n\n"
-
-    message += "💠 <b>تتر (USDT)</b>\n"
-    if usd_price is not None:
-        message += f"💵 دلاری: <b>{usd_price}$</b>\n"
-    else:
-        message += "💵 دلاری: دریافت نشد\n"
-    if toman_price is not None:
-        message += f"💰 تومانی: <b>{toman_price:,} تومان</b>\n"
-    else:
-        message += "💰 تومانی: دریافت نشد\n"
-
-    message += "\n🥇 <b>طلا</b>\n"
-    if gold18_price is not None:
-        message += f"🔸 هر گرم طلای ۱۸ عیار: <b>{gold18_price:,} تومان</b>\n"
-    else:
-        message += "🔸 طلای ۱۸ عیار: دریافت نشد\n"
-    if ounce_price is not None:
-        message += f"🔸 انس جهانی طلا: <b>{ounce_price:,}$</b>\n"
-    else:
-        message += "🔸 انس جهانی طلا: دریافت نشد\n"
-
-    send_telegram_message(message)
-    print(f"[{now}] پیام ارسال شد.")
+    print(f"[{now}] عکس گزارش ساخته و ارسال شد.")
 
 
 if __name__ == "__main__":
