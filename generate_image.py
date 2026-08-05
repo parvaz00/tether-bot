@@ -18,7 +18,7 @@ FIELDS = {
     "time":     {"cx": 375, "cy": 200},
     "date":     {"cx": 825, "cy": 200},
     "usdt_usd": {"cx": 575, "cy": 525},
-    "usdt_irt": {"cx": 575, "cy": 700},
+    "usdt_irt": {"cx": 575, "cy": 720},
     "gold18":   {"cx": 575, "cy": 900},
     "ounce":    {"cx": 575, "cy": 1075},
 }
