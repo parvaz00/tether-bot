@@ -17,14 +17,13 @@ GOLD  = (212, 175, 55)
 
 PERSIAN_DIGITS = str.maketrans("0123456789", "۰۱۲۳۴۵۶۷۸۹")
 
-# مرکز دقیق هر کادر - cy رو پایین‌تر آوردم تا وسط کادر باشه
 FIELDS = {
-    "time":     {"cx": 355, "cy": 163, "max_w": 260},
-    "date":     {"cx": 793, "cy": 163, "max_w": 290},
-    "usdt_usd": {"cx": 533, "cy": 490, "max_w": 330},
-    "usdt_irt": {"cx": 533, "cy": 678, "max_w": 330},
-    "gold18":   {"cx": 533, "cy": 868, "max_w": 330},
-    "ounce":    {"cx": 533, "cy": 1057,"max_w": 330},
+    "time":     {"cx": 355, "cy": 168, "max_w": 260},
+    "date":     {"cx": 793, "cy": 168, "max_w": 290},
+    "usdt_usd": {"cx": 533, "cy": 467, "max_w": 330},
+    "usdt_irt": {"cx": 533, "cy": 657, "max_w": 330},
+    "gold18":   {"cx": 533, "cy": 847, "max_w": 330},
+    "ounce":    {"cx": 533, "cy": 1037, "max_w": 330},
 }
 
 
@@ -43,7 +42,6 @@ def get_font(size, bold=True):
 
 
 def fit_and_draw(draw, key, text, start_size=46):
-    """متن رو با بزرگ‌ترین سایز ممکن دقیقاً وسط کادر رسم می‌کنه"""
     f = FIELDS[key]
     size = start_size
     while size >= 18:
@@ -69,19 +67,19 @@ def build_report_image(usd_price, toman_price, gold18_price, ounce_price):
     fit_and_draw(draw, "time", time_str)
     fit_and_draw(draw, "date", date_str)
 
-    # تتر به دلار (فقط عدد، بدون "تومان")
+    # تتر به دلار
     val = f"$ {usd_price:.2f}" if usd_price is not None else fa("دریافت نشد")
     fit_and_draw(draw, "usdt_usd", val)
 
-    # تتر به تومان (فقط عدد، بدون "تومان")
+    # تتر به تومان
     val = to_fa(f"{toman_price:,}") if toman_price is not None else fa("دریافت نشد")
     fit_and_draw(draw, "usdt_irt", val)
 
-    # طلای ۱۸ عیار (فقط عدد، بدون "تومان")
+    # طلای ۱۸ عیار
     val = to_fa(f"{gold18_price:,}") if gold18_price is not None else fa("دریافت نشد")
     fit_and_draw(draw, "gold18", val)
 
-    # انس جهانی (فقط عدد)
+    # انس جهانی
     val = f"$ {ounce_price:,.2f}" if ounce_price is not None else fa("دریافت نشد")
     fit_and_draw(draw, "ounce", val)
 
