@@ -20,7 +20,7 @@ FIELDS = {
     "usdt_usd": {"cx": 575, "cy": 525},
     "usdt_irt": {"cx": 575, "cy": 720},
     "gold18":   {"cx": 575, "cy": 900},
-    "ounce":    {"cx": 575, "cy": 1075},
+    "ounce":    {"cx": 575, "cy": 1095},
 }
 
 
@@ -56,7 +56,7 @@ def build_report_image(usd_price, toman_price, gold18_price, ounce_price):
     draw_field(draw, "time", time_str)
     draw_field(draw, "date", date_str)
 
-    val = f"$ {usd_price:.2f}" if usd_price is not None else fa("دریافت نشد")
+    val = f"{usd_price:.2f}" if usd_price is not None else fa("دریافت نشد")
     draw_field(draw, "usdt_usd", val)
 
     val = to_fa(f"{toman_price:,}") if toman_price is not None else fa("دریافت نشد")
@@ -65,7 +65,7 @@ def build_report_image(usd_price, toman_price, gold18_price, ounce_price):
     val = to_fa(f"{gold18_price:,}") if gold18_price is not None else fa("دریافت نشد")
     draw_field(draw, "gold18", val)
 
-    val = f"$ {ounce_price:,.2f}" if ounce_price is not None else fa("دریافت نشد")
+    val = f"{ounce_price:,.2f}" if ounce_price is not None else fa("دریافت نشد")
     draw_field(draw, "ounce", val)
 
     return img
