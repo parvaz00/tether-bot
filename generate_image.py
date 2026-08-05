@@ -13,20 +13,18 @@ import jdatetime
 FONT_BOLD    = "fonts/Vazirmatn-Bold.ttf"
 FONT_REGULAR = "fonts/Vazirmatn-Regular.ttf"
 
-GOLD  = (201, 162, 87)
-WHITE = (240, 240, 240)
-GREEN = (70, 200, 140)
+GOLD  = (212, 175, 55)   # همه اعداد این رنگ زرد طلایی
 
 PERSIAN_DIGITS = str.maketrans("0123456789", "۰۱۲۳۴۵۶۷۸۹")
 
-# مختصات دقیق مرکز هر کادر روی قالب (cx, cy) و عرض کادر برای تنظیم فونت
+# مرکز دقیق هر کادر (cx=مرکز افقی، cy=مرکز عمودی) و حداکثر عرض متن
 FIELDS = {
-    "time":     {"cx": 355,  "cy": 163, "max_w": 265, "color": WHITE},
-    "date":     {"cx": 793,  "cy": 163, "max_w": 295, "color": WHITE},
-    "usdt_usd": {"cx": 533,  "cy": 467, "max_w": 340, "color": GREEN},
-    "usdt_irt": {"cx": 533,  "cy": 656, "max_w": 340, "color": GREEN},
-    "gold18":   {"cx": 533,  "cy": 846, "max_w": 340, "color": GOLD},
-    "ounce":    {"cx": 533,  "cy": 1035,"max_w": 340, "color": GOLD},
+    "time":     {"cx": 355, "cy": 163, "max_w": 260},
+    "date":     {"cx": 793, "cy": 163, "max_w": 290},
+    "usdt_usd": {"cx": 533, "cy": 470, "max_w": 330},
+    "usdt_irt": {"cx": 533, "cy": 658, "max_w": 330},
+    "gold18":   {"cx": 533, "cy": 848, "max_w": 330},
+    "ounce":    {"cx": 533, "cy": 1038,"max_w": 330},
 }
 
 
@@ -39,28 +37,23 @@ def to_fa(text):
     return str(text).translate(PERSIAN_DIGITS)
 
 
-def get_font(size, bold=False):
+def get_font(size, bold=True):
     path = FONT_BOLD if bold else FONT_REGULAR
     return ImageFont.truetype(path, size)
 
 
-def fit_text(draw, text, max_w, start_size=44, bold=True):
-    """پیدا کردن بزرگ‌ترین سایز فونتی که متن داخل عرض کادر جا بشه"""
+def fit_and_draw(draw, key, text, start_size=46):
+    """متن رو با بزرگ‌ترین سایز ممکن دقیقاً وسط کادر رسم می‌کنه"""
+    f = FIELDS[key]
     size = start_size
-    while size > 16:
-        fnt = get_font(size, bold=bold)
+    while size >= 18:
+        fnt = get_font(size)
         bbox = draw.textbbox((0, 0), text, font=fnt)
         w = bbox[2] - bbox[0]
-        if w <= max_w:
-            return fnt
+        if w <= f["max_w"]:
+            break
         size -= 2
-    return get_font(16, bold=bold)
-
-
-def draw_field(draw, key, text):
-    f = FIELDS[key]
-    fnt = fit_text(draw, text, f["max_w"])
-    draw.text((f["cx"], f["cy"]), text, font=fnt, fill=f["color"], anchor="mm")
+    draw.text((f["cx"], f["cy"]), text, font=fnt, fill=GOLD, anchor="mm")
 
 
 def build_report_image(usd_price, toman_price, gold18_price, ounce_price):
@@ -73,24 +66,24 @@ def build_report_image(usd_price, toman_price, gold18_price, ounce_price):
     jd = jdatetime.datetime.fromgregorian(datetime=now_iran)
     date_str = to_fa(jd.strftime("%Y/%m/%d"))
 
-    draw_field(draw, "time", time_str)
-    draw_field(draw, "date", date_str)
+    fit_and_draw(draw, "time", time_str)
+    fit_and_draw(draw, "date", date_str)
 
     # تتر به دلار
     val = f"$ {usd_price:.2f}" if usd_price is not None else fa("دریافت نشد")
-    draw_field(draw, "usdt_usd", val)
+    fit_and_draw(draw, "usdt_usd", val)
 
     # تتر به تومان
     val = fa(to_fa(f"{toman_price:,}") + " تومان") if toman_price is not None else fa("دریافت نشد")
-    draw_field(draw, "usdt_irt", val)
+    fit_and_draw(draw, "usdt_irt", val)
 
     # طلای ۱۸ عیار
     val = fa(to_fa(f"{gold18_price:,}") + " تومان") if gold18_price is not None else fa("دریافت نشد")
-    draw_field(draw, "gold18", val)
+    fit_and_draw(draw, "gold18", val)
 
     # انس جهانی
     val = f"$ {ounce_price:,.2f}" if ounce_price is not None else fa("دریافت نشد")
-    draw_field(draw, "ounce", val)
+    fit_and_draw(draw, "ounce", val)
 
     return img
 
