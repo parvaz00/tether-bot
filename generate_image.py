@@ -20,7 +20,7 @@ FIELDS = {
     "usdt_usd": {"cx": 575, "cy": 525},
     "usdt_irt": {"cx": 575, "cy": 720},
     "gold18":   {"cx": 575, "cy": 900},
-    "ounce":    {"cx": 575, "cy": 1095},
+    "ounce":    {"cx": 575, "cy": 1080},
 }
 
 
