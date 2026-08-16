@@ -107,6 +107,23 @@ def strip_html(text):
     return unescape(text).strip()
 
 
+def translate_text(text):
+    """ترجمه‌ی متن انگلیسی به فارسی. اگه ترجمه شکست بخوره، خود متن اصلی رو برمی‌گردونه."""
+    if not text:
+        return text
+    try:
+        resp = requests.get(
+            "https://translate.googleapis.com/translate_a/single",
+            params={"client": "gtx", "sl": "en", "tl": "fa", "dt": "t", "q": text},
+            timeout=10,
+        )
+        data = resp.json()
+        return "".join(segment[0] for segment in data[0] if segment[0])
+    except Exception as e:
+        print(f"خطا در ترجمه: {e}")
+        return text
+
+
 def fetch_feed_items(url):
     items = []
     try:
@@ -135,7 +152,9 @@ def check_and_send_news(state):
         for item in fetch_feed_items(feed_url):
             if item["id"] in sent:
                 continue
-            text = f"📰 {source_name}\n\n{item['title']}\n\n{item['desc']}\n\n🔗 {item['link']}"
+            title_fa = translate_text(item["title"])
+            desc_fa = translate_text(item["desc"])
+            text = f"📰 {source_name}\n\n{title_fa}\n\n{desc_fa}\n\n🔗 {item['link']}"
             send_message(text)
             new_sent.append(item["id"])
             sent.add(item["id"])
