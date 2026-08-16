@@ -53,35 +53,16 @@ def send_message(text, reply_markup=None):
         print(f"خطا در ارسال پیام: {e}")
 
 
-def toggle_keyboard(is_on):
-    label = "📰 اخبار روز: روشن ✅ (بزن خاموش کن)" if is_on else "📰 ارسال اخبار روز (بزن روشن کن)"
-    return {"inline_keyboard": [[{"text": label, "callback_data": "toggle_news"}]]}
-
-
-def answer_callback(callback_id, text):
-    try:
-        requests.post(
-            f"{API}/answerCallbackQuery",
-            data={"callback_query_id": callback_id, "text": text},
-            timeout=15,
-        )
-    except Exception as e:
-        print(f"خطا در پاسخ به دکمه: {e}")
-
-
-def edit_markup(chat_id, message_id, is_on):
-    try:
-        requests.post(
-            f"{API}/editMessageReplyMarkup",
-            data={
-                "chat_id": chat_id,
-                "message_id": message_id,
-                "reply_markup": json.dumps(toggle_keyboard(is_on)),
-            },
-            timeout=15,
-        )
-    except Exception as e:
-        print(f"خطا در تغییر دکمه: {e}")
+# دکمه‌ی ثابت پایین چت (کنار دکمه‌ی قیمت‌ها)
+NEWS_BUTTON_TEXT = "📰 اخبار روز"
+MAIN_KEYBOARD = {
+    "keyboard": [
+        [{"text": "📊 دریافت قیمت‌ها"}],
+        [{"text": NEWS_BUTTON_TEXT}],
+    ],
+    "resize_keyboard": True,
+    "is_persistent": True,
+}
 
 
 def process_updates(state):
@@ -103,24 +84,20 @@ def process_updates(state):
         state["last_update_id"] = update["update_id"]
 
         message = update.get("message")
-        if message and message.get("text", "").strip() == "/news":
-            send_message(
-                "برای روشن یا خاموش کردن اخبار روز روی دکمه بزن:",
-                toggle_keyboard(state["news_mode"]),
-            )
+        if not message:
+            continue
 
-        callback = update.get("callback_query")
-        if callback and callback.get("data") == "toggle_news":
+        text = message.get("text", "").strip()
+
+        if text == "/start":
+            send_message("خوش اومدی! از دکمه‌های پایین استفاده کن:", MAIN_KEYBOARD)
+
+        elif text in ("/news", NEWS_BUTTON_TEXT):
             state["news_mode"] = not state["news_mode"]
-            answer_callback(
-                callback["id"],
-                "اخبار روز روشن شد ✅" if state["news_mode"] else "اخبار روز خاموش شد ⛔",
-            )
-            edit_markup(
-                callback["message"]["chat"]["id"],
-                callback["message"]["message_id"],
-                state["news_mode"],
-            )
+            if state["news_mode"]:
+                send_message("🟢 اخبار روز روشن شد؛ در حال بررسی اخبار جدید...", MAIN_KEYBOARD)
+            else:
+                send_message("🔴 اخبار روز خاموش شد.", MAIN_KEYBOARD)
 
     return state
 
