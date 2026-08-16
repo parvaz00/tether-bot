@@ -92,6 +92,8 @@ def process_updates(state):
             params={"offset": state["last_update_id"] + 1, "timeout": 0},
             timeout=15,
         )
+        print(f"DEBUG status_code={resp.status_code}")
+        print(f"DEBUG raw_response={resp.text}")
         updates = resp.json().get("result", [])
     except Exception as e:
         print(f"خطا در گرفتن آپدیت‌ها: {e}")
