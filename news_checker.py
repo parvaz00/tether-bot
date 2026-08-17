@@ -19,8 +19,20 @@ CHAT_ID = os.environ["CHAT_ID"]
 STATE_FILE = "news_state.json"
 
 FEEDS = {
-    "رویترز": "https://news.google.com/rss/search?q=site:reuters.com&hl=en-US&gl=US&ceid=US:en",
-    "وال استریت ژورنال": "https://news.google.com/rss/search?q=site:wsj.com&hl=en-US&gl=US&ceid=US:en",
+    "رویترز": {
+        "url": "https://news.google.com/rss/search?q=site:reuters.com&hl=en-US&gl=US&ceid=US:en",
+        "translate": True,
+    },
+    "وال استریت ژورنال": {
+        "url": "https://news.google.com/rss/search?q=site:wsj.com&hl=en-US&gl=US&ceid=US:en",
+        "translate": True,
+    },
+    "کانال Last News": {"url": "https://rsshub.app/telegram/channel/lastnews", "translate": False},
+    "کانال کارگشا": {"url": "https://rsshub.app/telegram/channel/kargosha", "translate": False},
+    "کانال News1Fori": {"url": "https://rsshub.app/telegram/channel/News1Fori", "translate": False},
+    "کانال بهنام صمدی": {"url": "https://rsshub.app/telegram/channel/BehnamSamadi_ir", "translate": False},
+    "کانال Update World News": {"url": "https://rsshub.app/telegram/channel/updateworlddnews", "translate": False},
+    "کانال توییتر بورس": {"url": "https://rsshub.app/telegram/channel/twitter_bourse", "translate": False},
 }
 
 API = f"https://api.telegram.org/bot{BOT_TOKEN}"
@@ -147,12 +159,16 @@ def check_and_send_news(state):
     sent = set(state["sent_ids"])
     new_sent = list(state["sent_ids"])
 
-    for source_name, feed_url in FEEDS.items():
-        for item in fetch_feed_items(feed_url):
+    for source_name, feed_info in FEEDS.items():
+        for item in fetch_feed_items(feed_info["url"]):
             if item["id"] in sent:
                 continue
-            title_fa = translate_text(item["title"])
-            desc_fa = translate_text(item["desc"])
+            if feed_info["translate"]:
+                title_fa = translate_text(item["title"])
+                desc_fa = translate_text(item["desc"])
+            else:
+                title_fa = item["title"]
+                desc_fa = item["desc"]
             text = f"📰 {source_name}\n\n{title_fa}\n\n{desc_fa}\n\n🔗 {item['link']}"
             send_message(text)
             new_sent.append(item["id"])
