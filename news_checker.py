@@ -2,7 +2,7 @@
 news_checker.py
 این اسکریپت هر بار که اجرا میشه (توسط GitHub Actions هر ۵ دقیقه):
 1. چک می‌کنه آیا کاربر روی دکمه‌ی "ارسال اخبار روز" زده یا دستور /news فرستاده
-2. اگر حالت اخبار "روشن" باشه، فیدهای رویترز، WSJ و یاهو فایننس رو چک می‌کنه
+2. اگر حالت اخبار "روشن" باشه، فیدهای رویترز و WSJ رو چک می‌کنه
    و خبرهای جدید (که قبلاً نفرستاده) رو به تلگرام می‌فرسته
 """
 
@@ -21,7 +21,6 @@ STATE_FILE = "news_state.json"
 FEEDS = {
     "رویترز": "https://news.google.com/rss/search?q=site:reuters.com&hl=en-US&gl=US&ceid=US:en",
     "وال استریت ژورنال": "https://news.google.com/rss/search?q=site:wsj.com&hl=en-US&gl=US&ceid=US:en",
-    "یاهو فایننس": "https://feeds.finance.yahoo.com/rss/2.0/headline?s=%5EGSPC&region=US&lang=en-US",
 }
 
 API = f"https://api.telegram.org/bot{BOT_TOKEN}"
