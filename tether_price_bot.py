@@ -1,155 +1,88 @@
 """
-ربات تلگرام اعلام قیمت تتر + طلای ۱۸ عیار + انس جهانی طلا (به‌صورت تصویر جدولی)
-این نسخه برای اجرا با GitHub Actions هست: هر بار که اجرا می‌شه،
-یک عکس می‌سازه و می‌فرسته و تموم می‌شه. زمان‌بندی رو خود GitHub Actions
-(فایل .github/workflows/tether-price.yml) انجام می‌ده.
-
-توکن، chat id و کلید BrsApi از "GitHub Secrets" خونده می‌شن.
+ربات تلگرام - دکمه دستی قیمت بازار
+وقتی دکمه "📊 قیمت بازار" زده می‌شه، GitHub Actions workflow رو trigger می‌کنه
+که قیمت‌ها رو از BrsApi می‌گیره و عکس می‌فرسته.
 """
 
 import os
+import time
 import requests
-from datetime import datetime
 
-from generate_image import build_report_image, image_to_bytes
+BOT_TOKEN  = os.environ.get("BOT_TOKEN")
+GH_TOKEN   = os.environ.get("GH_TOKEN")
+GH_REPO    = "parvaz00/tether-bot"
 
-BOT_TOKEN = os.environ.get("BOT_TOKEN")
-CHAT_ID = os.environ.get("CHAT_ID")
-BRSAPI_KEY = os.environ.get("BRSAPI_KEY")
-
-BRSAPI_HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-    "Accept": "application/json, text/plain, */*",
-}
-
-_brsapi_cache = None
+BASE_URL = f"https://api.telegram.org/bot{BOT_TOKEN}"
 
 
-def get_usd_price():
-    """گرفتن قیمت جهانی تتر به دلار از CoinGecko"""
-    try:
-        url = "https://api.coingecko.com/api/v3/simple/price"
-        params = {"ids": "tether", "vs_currencies": "usd"}
-        response = requests.get(url, params=params, timeout=10)
-        data = response.json()
-        return data["tether"]["usd"]
-    except Exception as e:
-        print(f"خطا در گرفتن قیمت دلاری: {e}")
-        return None
+def trigger_price_workflow():
+    """trigger کردن workflow قیمت از گیت‌هاب"""
+    url = f"https://api.github.com/repos/{GH_REPO}/actions/workflows/tether-price.yml/dispatches"
+    headers = {
+        "Authorization": f"token {GH_TOKEN}",
+        "Accept": "application/vnd.github.v3+json"
+    }
+    data = {"ref": "main"}
+    r = requests.post(url, json=data, headers=headers, timeout=10)
+    return r.status_code == 204
 
 
-def get_brsapi_data():
-    global _brsapi_cache
-    if _brsapi_cache is not None:
-        return _brsapi_cache
-    if not BRSAPI_KEY:
-        print("خطا: BRSAPI_KEY تنظیم نشده")
-        return None
-    try:
-        url = "https://Api.BrsApi.ir/Market/Gold_Currency.php"
-        params = {"key": BRSAPI_KEY}
-        response = requests.get(url, params=params, headers=BRSAPI_HEADERS, timeout=15)
-        data = response.json()
-        print("پاسخ خام BrsApi:", data)
-
-        candidates = []
-        if isinstance(data, dict):
-            for value in data.values():
-                if isinstance(value, list):
-                    candidates.extend(value)
-        elif isinstance(data, list):
-            candidates = data
-
-        _brsapi_cache = candidates
-        return candidates
-    except Exception as e:
-        print(f"خطا در گرفتن اطلاعات از BrsApi: {e}")
-        return None
+def send_message(chat_id, text, reply_markup=None):
+    import json
+    payload = {"chat_id": chat_id, "text": text, "parse_mode": "HTML"}
+    if reply_markup:
+        payload["reply_markup"] = json.dumps(reply_markup)
+    requests.post(f"{BASE_URL}/sendMessage", data=payload, timeout=10)
 
 
-def find_price(candidates, symbol_keywords=None, name_keywords=None):
-    if not candidates:
-        return None
-    symbol_keywords = [s.upper() for s in (symbol_keywords or [])]
-    name_keywords = name_keywords or []
-
-    for item in candidates:
-        if not isinstance(item, dict):
-            continue
-        symbol = str(item.get("symbol", "")).upper()
-        name = str(item.get("name", ""))
-        name_en = str(item.get("name_en", "")).lower()
-
-        symbol_match = any(k in symbol for k in symbol_keywords)
-        name_match = any(k in name or k.lower() in name_en for k in name_keywords)
-
-        if symbol_match or name_match:
-            price = item.get("price") or item.get("price_toman") or item.get("close")
-            if price:
-                try:
-                    return round(float(price))
-                except (TypeError, ValueError):
-                    continue
-    return None
+def get_keyboard():
+    return {
+        "keyboard": [[{"text": "📊 قیمت بازار"}]],
+        "resize_keyboard": True,
+        "persistent": True
+    }
 
 
-def get_toman_price(usd_price):
-    if usd_price is None:
-        return None
-    candidates = get_brsapi_data()
-    return find_price(candidates, symbol_keywords=["USDT"], name_keywords=["تتر", "Tether"])
-
-
-def get_gold_18k_price():
-    candidates = get_brsapi_data()
-    return find_price(
-        candidates,
-        symbol_keywords=["IR_GOLD_18K", "GERAM18", "GOLD18"],
-        name_keywords=["طلای 18 عیار", "طلا 18 عیار", "18 عیار", "18K Gold"],
-    )
-
-
-def get_gold_ounce_price():
-    candidates = get_brsapi_data()
-    return find_price(
-        candidates,
-        symbol_keywords=["XAUUSD", "XAU", "ONS"],
-        name_keywords=["انس طلا", "انس جهانی", "Gold Ounce"],
-    )
-
-
-def send_telegram_photo(image_bytes, caption=""):
-    """ارسال عکس به تلگرام"""
-    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendPhoto"
-    files = {"photo": ("report.png", image_bytes, "image/png")}
-    data = {"chat_id": CHAT_ID, "caption": caption}
-    try:
-        response = requests.post(url, data=data, files=files, timeout=20)
-        if response.status_code != 200:
-            print(f"خطا در ارسال عکس: {response.text}")
-        else:
-            print("عکس با موفقیت ارسال شد.")
-    except Exception as e:
-        print(f"خطا در ارسال عکس: {e}")
-
-
-def build_and_send_report():
-    if not BOT_TOKEN or not CHAT_ID:
-        print("خطا: BOT_TOKEN یا CHAT_ID تنظیم نشده (باید تو GitHub Secrets اضافه بشن)")
+def handle_update(update):
+    msg = update.get("message", {})
+    if not msg:
         return
+    chat_id = msg["chat"]["id"]
+    text = msg.get("text", "")
 
-    usd_price = get_usd_price()
-    toman_price = get_toman_price(usd_price)
-    gold18_price = get_gold_18k_price()
-    ounce_price = get_gold_ounce_price()
+    if text in ["/start", "start"]:
+        send_message(chat_id,
+            "سلام! 👋\nبرای دریافت قیمت‌های لحظه‌ای روی دکمه زیر بزن 👇",
+            reply_markup=get_keyboard())
 
-    img = build_report_image(usd_price, toman_price, gold18_price, ounce_price)
-    img_bytes = image_to_bytes(img)
+    elif text == "📊 قیمت بازار":
+        send_message(chat_id, "⏳ در حال دریافت قیمت‌ها، لطفاً ۳۰ ثانیه صبر کن...")
+        ok = trigger_price_workflow()
+        if not ok:
+            send_message(chat_id, "❌ خطا در دریافت قیمت‌ها. دوباره امتحان کن.")
 
-    send_telegram_photo(img_bytes)
-    now = datetime.now().strftime("%Y-%m-%d %H:%M")
-    print(f"[{now}] عکس گزارش ساخته و ارسال شد.")
+
+def get_updates(offset=None):
+    params = {"timeout": 30, "allowed_updates": ["message"]}
+    if offset:
+        params["offset"] = offset
+    try:
+        r = requests.get(f"{BASE_URL}/getUpdates", params=params, timeout=35)
+        return r.json().get("result", [])
+    except:
+        return []
+
+
+def main():
+    print("ربات روشن شد...")
+    offset = None
+    while True:
+        updates = get_updates(offset)
+        for update in updates:
+            handle_update(update)
+            offset = update["update_id"] + 1
+        time.sleep(1)
 
 
 if __name__ == "__main__":
-    build_and_send_report()
+    main()
