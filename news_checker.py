@@ -18,21 +18,19 @@ BOT_TOKEN = os.environ["BOT_TOKEN"]
 CHAT_ID = os.environ["CHAT_ID"]
 STATE_FILE = "news_state.json"
 
-FEEDS = {
-    "رویترز": {
-        "url": "https://news.google.com/rss/search?q=site:reuters.com&hl=en-US&gl=US&ceid=US:en",
-        "translate": True,
-    },
-    "وال استریت ژورنال": {
-        "url": "https://news.google.com/rss/search?q=site:wsj.com&hl=en-US&gl=US&ceid=US:en",
-        "translate": True,
-    },
-    "کانال Last News": {"url": "https://rsshub.app/telegram/channel/lastnews", "translate": False},
-    "کانال کارگشا": {"url": "https://rsshub.app/telegram/channel/kargosha", "translate": False},
-    "کانال News1Fori": {"url": "https://rsshub.app/telegram/channel/News1Fori", "translate": False},
-    "کانال بهنام صمدی": {"url": "https://rsshub.app/telegram/channel/BehnamSamadi_ir", "translate": False},
-    "کانال Update World News": {"url": "https://rsshub.app/telegram/channel/updateworlddnews", "translate": False},
-    "کانال توییتر بورس": {"url": "https://rsshub.app/telegram/channel/twitter_bourse", "translate": False},
+RSS_FEEDS = {
+    "رویترز": "https://news.google.com/rss/search?q=site:reuters.com&hl=en-US&gl=US&ceid=US:en",
+    "وال استریت ژورنال": "https://news.google.com/rss/search?q=site:wsj.com&hl=en-US&gl=US&ceid=US:en",
+}
+
+# نام نمایشی: یوزرنیم کانال (بدون @)
+TELEGRAM_CHANNELS = {
+    "کانال Last News": "lastnews",
+    "کانال کارگشا": "kargosha",
+    "کانال News1Fori": "News1Fori",
+    "کانال بهنام صمدی": "BehnamSamadi_ir",
+    "کانال Update World News": "updateworlddnews",
+    "کانال توییتر بورس": "twitter_bourse",
 }
 
 API = f"https://api.telegram.org/bot{BOT_TOKEN}"
@@ -152,6 +150,41 @@ def fetch_feed_items(url):
     return items
 
 
+def fetch_telegram_channel_items(username):
+    """خوندن مستقیم آخرین پست‌های عمومی یک کانال تلگرام از t.me/s/username"""
+    items = []
+    try:
+        resp = requests.get(
+            f"https://t.me/s/{username}",
+            timeout=15,
+            headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"},
+        )
+        html = resp.text
+
+        # هر پست تو یه بلاک با data-post="username/شماره" هست
+        posts = re.findall(
+            r'data-post="' + re.escape(username) + r'/(\d+)".*?tgme_widget_message_text[^>]*>(.*?)</div>',
+            html,
+            flags=re.DOTALL,
+        )
+        print(f"DEBUG telegram {username}: found {len(posts)} raw post blocks")
+        for post_id, raw_text in posts[-5:]:
+            text = strip_html(raw_text).replace("<br>", "\n")[:500]
+            if not text:
+                continue
+            items.append(
+                {
+                    "id": f"tg-{username}-{post_id}",
+                    "title": "",
+                    "link": f"https://t.me/{username}/{post_id}",
+                    "desc": text,
+                }
+            )
+    except Exception as e:
+        print(f"خطا در خوندن کانال {username}: {e}")
+    return items
+
+
 def check_and_send_news(state):
     if not state["news_mode"]:
         return state
@@ -159,17 +192,23 @@ def check_and_send_news(state):
     sent = set(state["sent_ids"])
     new_sent = list(state["sent_ids"])
 
-    for source_name, feed_info in FEEDS.items():
-        for item in fetch_feed_items(feed_info["url"]):
+    for source_name, feed_url in RSS_FEEDS.items():
+        for item in fetch_feed_items(feed_url):
             if item["id"] in sent:
                 continue
-            if feed_info["translate"]:
-                title_fa = translate_text(item["title"])
-                desc_fa = translate_text(item["desc"])
-            else:
-                title_fa = item["title"]
-                desc_fa = item["desc"]
+            title_fa = translate_text(item["title"])
+            desc_fa = translate_text(item["desc"])
             text = f"📰 {source_name}\n\n{title_fa}\n\n{desc_fa}\n\n🔗 {item['link']}"
+            send_message(text)
+            new_sent.append(item["id"])
+            sent.add(item["id"])
+            time.sleep(1)
+
+    for source_name, username in TELEGRAM_CHANNELS.items():
+        for item in fetch_telegram_channel_items(username):
+            if item["id"] in sent:
+                continue
+            text = f"📰 {source_name}\n\n{item['desc']}\n\n🔗 {item['link']}"
             send_message(text)
             new_sent.append(item["id"])
             sent.add(item["id"])
