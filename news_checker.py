@@ -62,6 +62,23 @@ def send_message(text, reply_markup=None):
         print(f"خطا در ارسال پیام: {e}")
 
 
+def send_photo(photo_url, caption):
+    payload = {
+        "chat_id": CHAT_ID,
+        "photo": photo_url,
+        "caption": caption[:1024],  # محدودیت تلگرام برای کپشن عکس
+    }
+    try:
+        resp = requests.post(f"{API}/sendPhoto", data=payload, timeout=20)
+        if not resp.json().get("ok"):
+            # اگه ارسال با لینک عکس شکست خورد (مثلاً تلگرام نتونه لینک رو باز کنه)، پیام متنی بفرست
+            print(f"خطا در ارسال عکس، برگشت به متن: {resp.text}")
+            send_message(f"{caption}\n\n🖼 {photo_url}")
+    except Exception as e:
+        print(f"خطا در ارسال عکس: {e}")
+        send_message(f"{caption}\n\n🖼 {photo_url}")
+
+
 # دکمه‌ی ثابت پایین چت (کنار دکمه‌ی قیمت‌ها)
 NEWS_BUTTON_TEXT = "📰 اخبار روز"
 MAIN_KEYBOARD = {
@@ -161,16 +178,33 @@ def fetch_telegram_channel_items(username):
         )
         html = resp.text
 
-        # هر پست تو یه بلاک با data-post="username/شماره" هست
-        posts = re.findall(
-            r'data-post="' + re.escape(username) + r'/(\d+)".*?tgme_widget_message_text[^>]*>(.*?)</div>',
-            html,
-            flags=re.DOTALL,
-        )
-        print(f"DEBUG telegram {username}: found {len(posts)} raw post blocks")
-        for post_id, raw_text in posts[-5:]:
-            text = strip_html(raw_text).replace("<br>", "\n")[:500]
-            if not text:
+        # هر پست رو از جایی که data-post شروع میشه تا شروع پست بعدی جدا می‌کنیم
+        blocks = re.split(r'(?=data-post="' + re.escape(username) + r'/\d+")', html)
+        print(f"DEBUG telegram {username}: found {len(blocks)} raw blocks")
+
+        posts = []
+        for block in blocks:
+            id_match = re.search(r'data-post="' + re.escape(username) + r'/(\d+)"', block)
+            if not id_match:
+                continue
+            post_id = id_match.group(1)
+
+            text_match = re.search(
+                r'tgme_widget_message_text[^>]*>(.*?)</div>', block, flags=re.DOTALL
+            )
+            raw_text = text_match.group(1) if text_match else ""
+            text = strip_html(raw_text).replace("<br>", "\n")[:900]
+
+            photo_match = re.search(
+                r'tgme_widget_message_photo_wrap[^"]*"\s+style="[^"]*background-image:\s*url\([\'"]?([^\'")]+)[\'"]?\)',
+                block,
+            )
+            photo_url = unescape(photo_match.group(1)) if photo_match else None
+
+            posts.append((post_id, text, photo_url))
+
+        for post_id, text, photo_url in posts[-5:]:
+            if not text and not photo_url:
                 continue
             items.append(
                 {
@@ -178,6 +212,7 @@ def fetch_telegram_channel_items(username):
                     "title": "",
                     "link": f"https://t.me/{username}/{post_id}",
                     "desc": text,
+                    "photo_url": photo_url,
                 }
             )
     except Exception as e:
@@ -209,7 +244,10 @@ def check_and_send_news(state):
             if item["id"] in sent:
                 continue
             text = f"📰 {source_name}\n\n{item['desc']}\n\n🔗 {item['link']}"
-            send_message(text)
+            if item.get("photo_url"):
+                send_photo(item["photo_url"], text)
+            else:
+                send_message(text)
             new_sent.append(item["id"])
             sent.add(item["id"])
             time.sleep(1)
