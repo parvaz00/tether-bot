@@ -233,7 +233,7 @@ def check_and_send_news(state):
                 continue
             title_fa = translate_text(item["title"])
             desc_fa = translate_text(item["desc"])
-            text = f"📰 {source_name}\n\n{title_fa}\n\n{desc_fa}\n\n🔗 {item['link']}"
+            text = f"📰 {source_name}\n\n{title_fa}\n\n{desc_fa}"
             send_message(text)
             new_sent.append(item["id"])
             sent.add(item["id"])
@@ -243,7 +243,7 @@ def check_and_send_news(state):
         for item in fetch_telegram_channel_items(username):
             if item["id"] in sent:
                 continue
-            text = f"📰 {source_name}\n\n{item['desc']}\n\n🔗 {item['link']}"
+            text = f"📰 {source_name}\n\n{item['desc']}"
             if item.get("photo_url"):
                 send_photo(item["photo_url"], text)
             else:
