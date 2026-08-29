@@ -1,7 +1,6 @@
 {
   "news_mode": true,
   "sent_ids": [
-    "tg-BehnamSamadi_ir-29872",
     "tg-BehnamSamadi_ir-29873",
     "tg-BehnamSamadi_ir-29874",
     "tg-BehnamSamadi_ir-29877",
@@ -300,7 +299,8 @@
     "tg-updateworlddnews-64723",
     "tg-twitter_bourse-68585",
     "tg-News1Fori-1",
-    "tg-updateworlddnews-64724"
+    "tg-updateworlddnews-64724",
+    "tg-News1Fori-2"
   ],
   "last_update_id": 35880750
 }
