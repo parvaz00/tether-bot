@@ -1,8 +1,6 @@
 {
   "news_mode": true,
   "sent_ids": [
-    "tg-twitter_bourse-68525",
-    "tg-twitter_bourse-68526",
     "tg-twitter_bourse-68527",
     "tg-twitter_bourse-68528",
     "tg-twitter_bourse-68529",
@@ -300,7 +298,9 @@
     "tg-updateworlddnews-64804",
     "tg-updateworlddnews-64805",
     "tg-updateworlddnews-64807",
-    "tg-updateworlddnews-64808"
+    "tg-updateworlddnews-64808",
+    "tg-updateworlddnews-64809",
+    "tg-updateworlddnews-64810"
   ],
   "last_update_id": 35880750
 }
