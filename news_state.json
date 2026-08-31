@@ -1,11 +1,6 @@
 {
   "news_mode": true,
   "sent_ids": [
-    "CBMitwFBVV95cUxNX3pyLXRWVzhHRFhiUGpqQWNVbk1SV25DX2RuU1pYLTVfYnRDUzI1NzZiMjFIcjk3bEVSRF9weVhQVU9udXFpSUwwc1FHQVd1Sy0wNnpDeHVpTkVOMlF1cXc4cUNNakpuV3gwU3BDNGtISE5xWnk1QUxKZXdsSUgxNDR3NWcwRHFKNVpvQmZxUi1pdVBSOUQtTmJ3V0xIZzdDajFVVnNfZzJQY3NPRDNKS0JMeUhMMkU",
-    "CBMirwFBVV95cUxOUDAtNFFsU0hkczc1WElVMklUNFZGc2pOcmxiUzFzcGxsY3Rzb0ZoREdpYlNyb3pDUFA5X3p4ZWtuNFZ4d3NidFB4SjExNE1hVlRmRmRrT0FCY0pRVnc1N0hkRUtmZ3MybmFyUW9FV1E0cmU4QUswNVYyVTdib1BpRlFzR2Y0ejFkLTRkZHZxaUl2TTZjeTluNVJJV1Y0S0pxV3FfdWN2UUhoaUxwckMw",
-    "CBMiowFBVV95cUxPcFV3ZUVhZFhOQms5NTllbFZUSnlOSThoaGVLSEcxZVg4YUpDeW1YcjJma2pHLWR2REdDTDRtQnVKZ0pxNHlwWTNCbU1vWmNhLThhUld2SUxsN1FFMUdaOE5JMEJqSkVlcjdKelJlRVp1aHAtMUI4R2pTNXR1Q1NDT253NWROV0x2RUZvWXBSUmNCZlgwb09sM2U1cDFIb1QtMGRZ",
-    "tg-BehnamSamadi_ir-29968",
-    "tg-updateworlddnews-64851",
     "tg-updateworlddnews-64852",
     "tg-twitter_bourse-68626",
     "tg-twitter_bourse-68627",
@@ -300,7 +295,12 @@
     "tg-BehnamSamadi_ir-30040",
     "tg-BehnamSamadi_ir-30041",
     "CBMivgFBVV95cUxQalUwUzZ5X25wVFgyN2dnX2tJd0MyM1YxbFoxdXZfbXpEUmdEVWpRNWhxOUNhM1BSTjljb0M4VWhJb3c3MTlaNzMxb2tldzdpM3VaQ3RIMkVFckhTcVExM0lWNDZBemY3dDlwWURmMFlyZC1sdGljTTdJbjUycncxTUJPb3dWZEV1NnN3NlV2ZnBRRTI2ZW4zdnYtVGVlRTJUNGtRTU14ZVF0eEp0cldOaTNMcXY0d0FRaFY1eU13",
-    "CBMizAFBVV95cUxNeU9rbWNtaGZPdW1MLW1mdzVaZHRqZzVLMEladlhHVFgtQkx3Y2VhRWpxNzNhMlpKMVNTcFBvWS0tUXd3cnB3UllpVFRIT2YtZzktOG1qY2tCNTBEdHJzcWlDZkNrUjhiZnlVWm9rMnQyLUhudVNTeEUycWRob2xvVnFUbzhtNWtlZ3VwSjVDZkp2OUV6R0RVejVhaU1la25zdmMydF8zZmY2OVM4aVU4Um4tNzI3aXJTZGdKb2s2RnpiVUl5TUxYb1loRGI"
+    "CBMizAFBVV95cUxNeU9rbWNtaGZPdW1MLW1mdzVaZHRqZzVLMEladlhHVFgtQkx3Y2VhRWpxNzNhMlpKMVNTcFBvWS0tUXd3cnB3UllpVFRIT2YtZzktOG1qY2tCNTBEdHJzcWlDZkNrUjhiZnlVWm9rMnQyLUhudVNTeEUycWRob2xvVnFUbzhtNWtlZ3VwSjVDZkp2OUV6R0RVejVhaU1la25zdmMydF8zZmY2OVM4aVU4Um4tNzI3aXJTZGdKb2s2RnpiVUl5TUxYb1loRGI",
+    "tg-updateworlddnews-64967",
+    "tg-updateworlddnews-64968",
+    "tg-updateworlddnews-64969",
+    "tg-updateworlddnews-64970",
+    "tg-updateworlddnews-64971"
   ],
   "last_update_id": 35880750
 }
