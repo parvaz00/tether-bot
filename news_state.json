@@ -1,12 +1,6 @@
 {
   "news_mode": true,
   "sent_ids": [
-    "tg-BehnamSamadi_ir-30035",
-    "tg-BehnamSamadi_ir-30036",
-    "CBMinAFBVV95cUxNWWhHOWlEckJZSmh6Q05JeGNpbHRsYk5EdE1tTmYyYkVlRHdkV1ZIeG1aUDV3MkRWcm4zc1h2dXpFODVzdU9scXlHQmRrcW1jaUlxOHhvTUtNTnpSc2JCTmJlVmNDUnA2V1VkcHY4d25IVi1hYkdPaUw0eEZmUUlQS3NjaFR5MXc5eEUzZXhMelJyUkx1THEyc3BJWGY",
-    "CBMizAFBVV95cUxPYnU0M0piVjA4SE84VElRNXczdVEzTF80dFdtMU54OU13MkRvY3lrYkNuTGM3UjB4VnFxZlBpd2phTlM5bzNJUVl0azNpeU01YWRLdnBsRXVETEp0Y0YtaW5waVc0bFNOenRfcVhSMTdlcnpKMEd0cnQ4WkFjN2dkb0hMOU1IajhtU2RUeG4zeGx2THF0clV6MndvU1NQTG0wc25rTXNSVHpfSWxGVThJSHMtclo0VXJqRDJ3T2tTTFBwVWxseXBWVkU1Ulc",
-    "tg-twitter_bourse-68678",
-    "tg-BehnamSamadi_ir-30037",
     "CBMiyAFBVV95cUxQMy1Xal9hQU5QWHU2R2NGN1FBMFZoNEM0dzVlbVd5Z2poTnlLZi1vcU05aGJzZnoyQWZQbUxQQUtmSGdZQ0ZYMWEtZHJhN1lTdy1SeUFBQXpfYXJlMXBfQ29JbUxsc0dJcWRjaDFmWUJmNTRmWWVJdjJLOWhkYmk4cjFGc3NFbjdmcUJRdzZ0UHI0ajF0OE5EMUNXYUZlRmExeUJtQlpfQmhlZ1VOYmdKNVR5WnYtUkszZ1FfV1dFQURkNGs0bzRmZg",
     "CBMiygFBVV95cUxNS1RaRjJaenRoMjVSVG16Nmx3Ym0wV3IxVy16WXVFT1NqdVRncm9SQmpMNnhENDRORmRxdkZ2bk51R210NVVvUjNkUGljaUNzYmZPemtSOUVVUmJNVjM1VFJGOEV2bDF1N1owR3hZb3ZBU1NMekNyU182dmxzTEU4aC11NVFTOHBpNk03MVkwOVRsSnBhMGNNazY0UjdzaU9Od0UxUmR2akdBaVdlQXJXcmxpWWQycnExd1dIUExfMVlER3Y1WENTVGZ3",
     "CBMizAFBVV95cUxNV2RrbjUxQWdINldfLTBrZlJmZExhOWxZUWZOeWwtWHdmX0x4TVhYU0FQV3dOVWtRNzYtS05BcjhwVW5XN3o3dno2ZFRkSnVvRVdnbzlxaEs3UWxUTG9ud2NDU3Z5OUhhTU4wd3dHUDNfZEVyRGxKYjkxWnNWRkdSWWx3TGdHMFNRaDBVUTZPb1A5UGJ1Y0MySjBTWXJjSWxGVVl2MjNxd0Q5Ym5vWnZRbVV1UjRNSVlxRm53bTdmMG9lSWQyVUVHMng4eTI",
@@ -300,7 +294,13 @@
     "tg-BehnamSamadi_ir-30105",
     "tg-updateworlddnews-65029",
     "tg-updateworlddnews-65030",
-    "tg-twitter_bourse-68748"
+    "tg-twitter_bourse-68748",
+    "tg-updateworlddnews-65031",
+    "tg-twitter_bourse-68749",
+    "tg-twitter_bourse-68750",
+    "tg-twitter_bourse-68751",
+    "tg-twitter_bourse-68752",
+    "tg-twitter_bourse-68753"
   ],
   "last_update_id": 35880750
 }
