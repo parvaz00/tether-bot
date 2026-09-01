@@ -1,11 +1,6 @@
 {
   "news_mode": true,
   "sent_ids": [
-    "tg-updateworlddnews-64940",
-    "tg-updateworlddnews-64942",
-    "tg-BehnamSamadi_ir-30028",
-    "tg-twitter_bourse-68673",
-    "CBMiuAFBVV95cUxOU1dQRXdsN1hyZEdOQ3VSMG8tcUJCbzhwcXJQeFBDREd0YjlCZmJsTjkyOGRQalBoaHNFM0V6R2g1aDhZbVZfNkNTZDlmOVNmcTVYZGVBRE5Mb09qaUM4LXVFaWJHMUhvTnNUcThwaE9zaVdmV3BOWXRsRWI0bXhmV1pEWEJDcDFKajZVRUk2WmZnTzBKSFNyZzB3QVBHY254OEZBVy03dmtvLVgzNHJ0VGUweGZFd2Q5",
     "tg-BehnamSamadi_ir-30029",
     "tg-updateworlddnews-64943",
     "tg-twitter_bourse-68674",
@@ -300,7 +295,12 @@
     "tg-twitter_bourse-68730",
     "tg-twitter_bourse-68731",
     "tg-twitter_bourse-68732",
-    "tg-twitter_bourse-68733"
+    "tg-twitter_bourse-68733",
+    "tg-BehnamSamadi_ir-30100",
+    "tg-twitter_bourse-68734",
+    "tg-twitter_bourse-68735",
+    "tg-twitter_bourse-68736",
+    "tg-twitter_bourse-68737"
   ],
   "last_update_id": 35880750
 }
