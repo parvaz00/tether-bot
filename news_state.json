@@ -1,10 +1,6 @@
 {
   "news_mode": true,
   "sent_ids": [
-    "tg-twitter_bourse-68650",
-    "tg-BehnamSamadi_ir-29995",
-    "tg-BehnamSamadi_ir-29996",
-    "tg-twitter_bourse-68651",
     "CBMizgFBVV95cUxQb0F3OEVRMm9EclRnQjJYYUtMcWU3b0VkNnVOV1BFZFc3Y2hFakhtdFlQX0pkOHRyUF9ZdVExclFmNmY3d21mMWJGSG1HRmxMV2V3M25iX3B0OW9vV1pFTk9FLU1TMWRxX2YzR0lhcEl3eHN1S1QySzViZV9sRll1SFZFSmhUVVhHM0FBeW5NQmlGb0p3a0FzbXo3RDhVRXhCYWNtekNua3duOTZ2OHd6dVBlem5WR0J1TUdwZlZjeUs4SURnT3dUZlNKelB6Zw",
     "CBMi1AFBVV95cUxPZXdPS1l4N3NDN29UV3B4Zlhickk3SGkyTXZmSmxuaEEyUnhSWjFhdW1oZTIxaEVaMHV5empoZUNkenAyTDVlMENDcnVSR18wYTVrSTJ5R2p2ZWhTTlZiWWpaa0xlY0JIMDlEWm1rMWYzV2o2WFZVOHItTGpiQ3J5ajFtY1dpMkFhNW51dVozZEp4MmJweUNwMWdrSnE5WHJZdFcwQWlDdl9HRnkwMjd5eEVQOThuaWhLdFVsT0otblR6OUx0ZWZCbjZxTVNOQ2lwNHhVYw",
     "tg-BehnamSamadi_ir-29997",
@@ -300,7 +296,11 @@
     "tg-BehnamSamadi_ir-30059",
     "tg-updateworlddnews-65002",
     "tg-updateworlddnews-65003",
-    "tg-updateworlddnews-65004"
+    "tg-updateworlddnews-65004",
+    "tg-updateworlddnews-65005",
+    "tg-updateworlddnews-65008",
+    "tg-updateworlddnews-65009",
+    "tg-twitter_bourse-68692"
   ],
   "last_update_id": 35880750
 }
