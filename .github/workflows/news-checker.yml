@@ -24,6 +24,7 @@ jobs:
         env:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           CHAT_ID: ${{ secrets.CHAT_ID }}
+          AVALAI_API_KEY: ${{ secrets.AVALAI_API_KEY }}
         run: python news_checker.py
 
       - name: Commit updated state
