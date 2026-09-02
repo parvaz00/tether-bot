@@ -1,18 +1,6 @@
 {
   "news_mode": true,
   "sent_ids": [
-    "tg-BehnamSamadi_ir-30084",
-    "tg-BehnamSamadi_ir-30085",
-    "tg-BehnamSamadi_ir-30086",
-    "tg-twitter_bourse-68723",
-    "tg-twitter_bourse-68724",
-    "tg-BehnamSamadi_ir-30089",
-    "tg-BehnamSamadi_ir-30090",
-    "tg-BehnamSamadi_ir-30091",
-    "tg-BehnamSamadi_ir-30092",
-    "tg-BehnamSamadi_ir-30093",
-    "tg-twitter_bourse-68725",
-    "tg-twitter_bourse-68726",
     "tg-twitter_bourse-68727",
     "CBMingFBVV95cUxPRVF2Z05jQm14M0lzZnZWUHVCYlRUQnY0aHNia3k3SEhqdTRadXhQTWNfX1JpS1loYkJ2Q1M2S2hkU205NE9jWHBOMGswWWZwSnhrbkV5VVdYcVozWkVUOEF3VW96SGlYMXB5Q2lXN3ljaW4zT01QQXJiV1BsX202U0NHbWZOZi1lMUg0dkg0a2xia0RDX1hSSF9hR2FvUQ",
     "tg-BehnamSamadi_ir-30094",
@@ -300,7 +288,19 @@
     "tg-twitter_bourse-68834",
     "tg-twitter_bourse-68835",
     "tg-twitter_bourse-68836",
-    "tg-twitter_bourse-68838"
+    "tg-twitter_bourse-68838",
+    "CBMipgFBVV95cUxQZkprNWZWZmliWmh1WXZLMk5HVUY0VDVUWkE1dU15a2xyeVJkWDNsS25aQnRqUVo1Zmh4OUxCMkk1RkFHRThST0JZQlpHNGJnSjB2aGpoanJWWXNBakVMcEhMUzNsSW5iZUM2SEJ0VXZuclFLM0laLXlGdHdQRVNNZGdwdmZ6YmhzSDhWNFZWRFR4S0pIWWVIb2pxUG4yalQ5cXhTU1dR",
+    "CBMiowFBVV95cUxPbTlzanNraHp6Y1VsOVdIVWlHbjhVN1lXX1FuWm5taUpFOXNvQmQwLUxpWXI1b3pXcEFJOE16M3h0R3MzTEFhbEJrWFZ3cjlERjFWQ2xfMnZlRW1uWnVrTjdlS09IWHk0d0xYNlVucDlYamM1NGJQLU1ibU42bnp4ZTJFM2dLMmxlbmZFWVd1NHZYN1RUcDNzSmpqVmN4bVhlUDhR",
+    "CBMilwFBVV95cUxQYlhxN1RXSU5tSHBXLXdYSkppSHlrUnRwOHBZYUhVQnVPRW9qSHNMMUEtZWZvVWJIcFVJYXBDam1VcXJVREgtMUNISjdLbXZ4Qkc5TU12Q2dhRmRhWFJvcFFqMEtmSEUxTHdabEIyV3loQk9XaEpRTGhGYjNrZFNZNnVuMXZacTVwS1p0WlJxYlZnWVI3STNv",
+    "CBMitwFBVV95cUxOank3cmNIQnJLaUZHSlFTNnRIdnpObEh4MWs5TFg3Y2ljaVJlWk5vUXVtWkRxdHlKMmdmWHdPNkxsOWlLR3VjREppcUdJWGZYUjFNYVhOT2dpTWdneTdMa3BIVVZEVkxMZ1FmNGI0UmtzMkV1czJ3Nlc3eTMyQlo3QWM3b3NhdkQ1a2tySm0ybjF6VjhOT1JsVElpZ0pHTWhaTGpxeThhZy04d1dFaUR6OTFfbld5b2c",
+    "CBMirAFBVV95cUxQQ1hNYVRva3ZoSnZOWU9xX1dLdUpsWGtiVGJMQkoyazlFYUNxSDYyS2wtc2M4OHhseTdhaGVDanEzMU45SFlhZmU1NVZ6aEtreklDR2lUMTR1T21CakxPRXJmdUtvb1R4allORENCSnFkYmxsV194b01oc2Vrb2xsQlZrRW8tYmVyLVZLRXdpUkxYemVheHNRUkh4c29rUFE4ZTN5THZpSDdtYmR3",
+    "CBMizAFBVV95cUxQVUdId2hPYkgxRURiY1dvWFUtTHNDdHVWQ1YxYXdobTFjX1IyRTdOUUI3OFBIOVBGeGt6SHRGbTNwVzUtZzJUVjBHZnJmc0p5dzNuQU1ta3NDWmFocnFVbGNiNXJEaU5xbkktWkhLWkpEUGxHeW82dzA1NWNzTEt5Nkw3YWtVLUFObmFZOUkxTTloRWVhdUlqaDJaSXNvLUM0SGhnQVZ5M0dMOGsyc183My1YSUplYnREWHhJUTJlN0xKSWRuU0VKcFhEN0Q",
+    "CBMipgFBVV95cUxOc2V3UUMyQThIU2RsSDluYlJ2c2h5Tlh3N24xVElfcElqdU5tVWFNZ2hHUE50eGlzY1lYZG9ZRDNqTkE2T1Z0ZVBCNGgzcm9rSkxuVHZIMi12dVJYaXdwcmRhY1VMZW5DSDA1eVdoRE9TdUJYazRNaEZ1MWhrS1hGWjB3Q3RycnRIWkxfYXdXTlFJQVZJWXhuTi15LW13dGpUeHlsNkVR",
+    "tg-updateworlddnews-65148",
+    "tg-updateworlddnews-65150",
+    "tg-updateworlddnews-65151",
+    "tg-updateworlddnews-65152",
+    "tg-twitter_bourse-68839"
   ],
   "last_update_id": 35880752
 }
