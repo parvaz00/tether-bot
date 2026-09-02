@@ -16,7 +16,25 @@ from html import unescape
 
 BOT_TOKEN = os.environ["BOT_TOKEN"]
 CHAT_ID = os.environ["CHAT_ID"]
+AVALAI_API_KEY = os.environ.get("AVALAI_API_KEY")
 STATE_FILE = "news_state.json"
+
+TAGS = [
+    "اقتصادی",
+    "جنگ",
+    "بازار مالی داخلی",
+    "توییت بزرگان بازار مالی و سیاستمداران و بیانیه سران",
+    "ارز دیجیتال",
+    "انس طلا و نقره و مس و روی",
+]
+
+TAG_PROMPT = (
+    "تو یک تحلیلگر خبری حوزه‌ی بازار مالی هستی. متن خبر زیر رو بخون و مشخص کن "
+    "دقیقاً به کدوم یک یا چندتا از این تگ‌ها مربوطه:\n"
+    + "\n".join(f"- {t}" for t in TAGS)
+    + "\n\nفقط اسم تگ‌های مرتبط رو با کاما (,) از هم جدا کن و بنویس، بدون هیچ توضیح اضافه. "
+    "اگه خبر به هیچ‌کدوم از این تگ‌ها مربوط نبود، فقط بنویس: هیچکدام"
+)
 
 RSS_FEEDS = {
     "رویترز": "https://news.google.com/rss/search?q=site:reuters.com&hl=en-US&gl=US&ceid=US:en",
@@ -150,6 +168,42 @@ def translate_text(text):
         return text
 
 
+def classify_news(text):
+    """
+    از AvalAI می‌خواد خبر رو تگ‌گذاری کنه.
+    خروجی: لیستی از تگ‌های مرتبط، یا [] اگه به هیچ تگی مربوط نبود،
+    یا None اگه خطا خورد (تا خبر به‌خاطر خطای موقت گم نشه).
+    """
+    if not AVALAI_API_KEY or not text:
+        return None
+    try:
+        resp = requests.post(
+            "https://api.avalai.ir/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {AVALAI_API_KEY}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "model": "gpt-4o-mini",
+                "messages": [
+                    {"role": "system", "content": TAG_PROMPT},
+                    {"role": "user", "content": text[:1500]},
+                ],
+                "temperature": 0,
+            },
+            timeout=20,
+        )
+        data = resp.json()
+        content = data["choices"][0]["message"]["content"].strip()
+        if "هیچکدام" in content:
+            return []
+        found = [t for t in TAGS if t in content]
+        return found
+    except Exception as e:
+        print(f"خطا در تگ‌گذاری هوش مصنوعی: {e}")
+        return None
+
+
 def fetch_feed_items(url):
     items = []
     try:
@@ -233,7 +287,16 @@ def check_and_send_news(state):
                 continue
             title_fa = translate_text(item["title"])
             desc_fa = translate_text(item["desc"])
-            text = f"📰 {source_name}\n\n{title_fa}\n\n{desc_fa}"
+
+            tags = classify_news(f"{title_fa}\n{desc_fa}")
+            if tags == []:
+                # به هیچ تگی مربوط نیست، رد می‌کنیم و به‌عنوان دیده‌شده ثبتش می‌کنیم
+                new_sent.append(item["id"])
+                sent.add(item["id"])
+                continue
+
+            tag_line = f"🏷 {', '.join(tags)}\n\n" if tags else ""
+            text = f"📰 {source_name}\n\n{tag_line}{title_fa}\n\n{desc_fa}"
             send_message(text)
             new_sent.append(item["id"])
             sent.add(item["id"])
@@ -243,7 +306,15 @@ def check_and_send_news(state):
         for item in fetch_telegram_channel_items(username):
             if item["id"] in sent:
                 continue
-            text = f"📰 {source_name}\n\n{item['desc']}"
+
+            tags = classify_news(item["desc"])
+            if tags == []:
+                new_sent.append(item["id"])
+                sent.add(item["id"])
+                continue
+
+            tag_line = f"🏷 {', '.join(tags)}\n\n" if tags else ""
+            text = f"📰 {source_name}\n\n{tag_line}{item['desc']}"
             if item.get("photo_url"):
                 send_photo(item["photo_url"], text)
             else:
