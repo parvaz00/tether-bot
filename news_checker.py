@@ -2,8 +2,9 @@
 news_checker.py
 این اسکریپت هر بار که اجرا میشه (توسط GitHub Actions هر ۵ دقیقه):
 1. چک می‌کنه آیا کاربر روی دکمه‌ی "ارسال اخبار روز" زده یا دستور /news فرستاده
-2. اگر حالت اخبار "روشن" باشه، فیدهای رویترز و WSJ رو چک می‌کنه
-   و خبرهای جدید (که قبلاً نفرستاده) رو به تلگرام می‌فرسته
+2. اگر حالت اخبار "روشن" باشه، منابع RSS انگلیسی و کانال‌های تلگرام رو چک می‌کنه،
+   با هوش مصنوعی (DeepSeek از طریق AvalAI) تگ‌گذاری و ترجمه می‌کنه،
+   و فقط خبرهای مرتبط و جدید رو به تلگرام می‌فرسته
 """
 
 import os
@@ -12,7 +13,7 @@ import time
 import re
 import requests
 import xml.etree.ElementTree as ET
-from html import unescape
+from html import unescape, escape as html_escape
 
 BOT_TOKEN = os.environ["BOT_TOKEN"]
 CHAT_ID = os.environ["CHAT_ID"]
@@ -39,6 +40,10 @@ TAG_PROMPT = (
 RSS_FEEDS = {
     "رویترز": "https://news.google.com/rss/search?q=site:reuters.com&hl=en-US&gl=US&ceid=US:en",
     "وال استریت ژورنال": "https://news.google.com/rss/search?q=site:wsj.com&hl=en-US&gl=US&ceid=US:en",
+    "SEC": "https://www.sec.gov/news/pressreleases.rss",
+    "یاهو فایننس": "https://feeds.finance.yahoo.com/rss/2.0/headline?s=%5EGSPC&region=US&lang=en-US",
+    "کوین‌دسک": "https://www.coindesk.com/arc/outboundfeeds/rss/",
+    "کریپتو نیوز": "https://crypto.news/feed/",
 }
 
 # نام نمایشی: یوزرنیم کانال (بدون @)
@@ -70,7 +75,8 @@ def send_message(text, reply_markup=None):
     payload = {
         "chat_id": CHAT_ID,
         "text": text,
-        "disable_web_page_preview": False,
+        "parse_mode": "HTML",
+        "disable_web_page_preview": True,
     }
     if reply_markup:
         payload["reply_markup"] = json.dumps(reply_markup)
@@ -80,21 +86,32 @@ def send_message(text, reply_markup=None):
         print(f"خطا در ارسال پیام: {e}")
 
 
-def send_photo(photo_url, caption):
+def send_photo(photo_url, body_text, url=None):
+    link_part = link_line(url)
+    max_body = 1024 - len(link_part)
+    caption = body_text[:max_body] + link_part
     payload = {
         "chat_id": CHAT_ID,
         "photo": photo_url,
-        "caption": caption[:1024],  # محدودیت تلگرام برای کپشن عکس
+        "caption": caption,
+        "parse_mode": "HTML",
     }
     try:
         resp = requests.post(f"{API}/sendPhoto", data=payload, timeout=20)
         if not resp.json().get("ok"):
             # اگه ارسال با لینک عکس شکست خورد (مثلاً تلگرام نتونه لینک رو باز کنه)، پیام متنی بفرست
             print(f"خطا در ارسال عکس، برگشت به متن: {resp.text}")
-            send_message(f"{caption}\n\n🖼 {photo_url}")
+            send_message(f"{body_text}{link_part}")
     except Exception as e:
         print(f"خطا در ارسال عکس: {e}")
-        send_message(f"{caption}\n\n🖼 {photo_url}")
+        send_message(f"{body_text}{link_part}")
+
+
+def link_line(url):
+    """یه خط با یه کلمه‌ی «لینک» که قابل کلیکه، برای انتهای پیام"""
+    if not url:
+        return ""
+    return f'\n\n🔗 <a href="{html_escape(url)}">لینک</a>'
 
 
 # دکمه‌ی ثابت پایین چت (کنار دکمه‌ی قیمت‌ها)
@@ -151,30 +168,23 @@ def strip_html(text):
     return unescape(text).strip()
 
 
-def translate_text(text):
-    """ترجمه‌ی متن انگلیسی به فارسی. اگه ترجمه شکست بخوره، خود متن اصلی رو برمی‌گردونه."""
-    if not text:
-        return text
-    try:
-        resp = requests.get(
-            "https://translate.googleapis.com/translate_a/single",
-            params={"client": "gtx", "sl": "en", "tl": "fa", "dt": "t", "q": text},
-            timeout=10,
-        )
-        data = resp.json()
-        return "".join(segment[0] for segment in data[0] if segment[0])
-    except Exception as e:
-        print(f"خطا در ترجمه: {e}")
-        return text
+DEEPSEEK_MODEL = "deepseek-chat"
+
+ANALYZE_PROMPT = (
+    "تو یک تحلیلگر خبری حرفه‌ای حوزه‌ی بازار مالی هستی و به فارسی و انگلیسی مسلطی. "
+    "متن خبر زیر (که به انگلیسیه) رو بخون و دو کار انجام بده:\n"
+    "1. مشخص کن دقیقاً به کدوم یک یا چندتا از این تگ‌ها مربوطه:\n"
+    + "\n".join(f"   - {t}" for t in TAGS)
+    + "\n2. کل متن رو کامل، دقیق و روان به فارسی ترجمه کن (چیزی از متن رو کم یا خلاصه نکن).\n\n"
+    "فقط یک خروجی JSON با همین ساختار دقیق برگردون، بدون هیچ توضیح یا متن اضافه:\n"
+    '{"tags": ["تگ۱", "تگ۲"], "translation": "متن ترجمه‌شده"}\n'
+    "اگه خبر به هیچ‌کدوم از تگ‌ها مربوط نبود:\n"
+    '{"tags": [], "translation": ""}'
+)
 
 
-def classify_news(text):
-    """
-    از AvalAI می‌خواد خبر رو تگ‌گذاری کنه.
-    خروجی: لیستی از تگ‌های مرتبط، یا [] اگه به هیچ تگی مربوط نبود،
-    یا None اگه خطا خورد (تا خبر به‌خاطر خطای موقت گم نشه).
-    """
-    if not AVALAI_API_KEY or not text:
+def _call_avalai(system_prompt, user_text):
+    if not AVALAI_API_KEY or not user_text:
         return None
     try:
         resp = requests.post(
@@ -184,24 +194,52 @@ def classify_news(text):
                 "Content-Type": "application/json",
             },
             json={
-                "model": "gpt-4o-mini",
+                "model": DEEPSEEK_MODEL,
                 "messages": [
-                    {"role": "system", "content": TAG_PROMPT},
-                    {"role": "user", "content": text[:1500]},
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_text[:3000]},
                 ],
                 "temperature": 0,
             },
-            timeout=20,
+            timeout=30,
         )
         data = resp.json()
-        content = data["choices"][0]["message"]["content"].strip()
-        if "هیچکدام" in content:
-            return []
-        found = [t for t in TAGS if t in content]
-        return found
+        return data["choices"][0]["message"]["content"].strip()
     except Exception as e:
-        print(f"خطا در تگ‌گذاری هوش مصنوعی: {e}")
+        print(f"خطا در تماس با AvalAI: {e}")
         return None
+
+
+def analyze_and_translate(text):
+    """
+    برای متن‌های انگلیسی: هم تگ‌ها رو تشخیص می‌ده هم دقیق ترجمه می‌کنه (با DeepSeek).
+    خروجی: (tags, translation) یا (None, None) اگه خطا خورد.
+    """
+    content = _call_avalai(ANALYZE_PROMPT, text)
+    if content is None:
+        return None, None
+    try:
+        cleaned = re.sub(r"^```json|^```|```$", "", content.strip(), flags=re.MULTILINE).strip()
+        data = json.loads(cleaned)
+        tags = [t for t in data.get("tags", []) if t in TAGS]
+        translation = data.get("translation", "")
+        return tags, translation
+    except Exception as e:
+        print(f"خطا در خوندن خروجی JSON هوش مصنوعی: {e} | content={content}")
+        return None, None
+
+
+def classify_news(text):
+    """
+    برای متن‌های فارسی (کانال‌های تلگرام): فقط تگ‌گذاری، بدون ترجمه.
+    خروجی: لیست تگ‌ها، [] اگه به هیچی مربوط نبود، یا None اگه خطا خورد.
+    """
+    content = _call_avalai(TAG_PROMPT, text)
+    if content is None:
+        return None
+    if "هیچکدام" in content:
+        return []
+    return [t for t in TAGS if t in content]
 
 
 def fetch_feed_items(url):
@@ -285,18 +323,22 @@ def check_and_send_news(state):
         for item in fetch_feed_items(feed_url):
             if item["id"] in sent:
                 continue
-            title_fa = translate_text(item["title"])
-            desc_fa = translate_text(item["desc"])
 
-            tags = classify_news(f"{title_fa}\n{desc_fa}")
+            full_text = f"{item['title']}\n{item['desc']}"
+            tags, translation = analyze_and_translate(full_text)
+
+            if tags is None:
+                # خطای موقت هوش مصنوعی؛ این خبر رو فعلاً رد می‌کنیم و دفعه‌ی بعد دوباره امتحان می‌کنیم
+                continue
+
             if tags == []:
-                # به هیچ تگی مربوط نیست، رد می‌کنیم و به‌عنوان دیده‌شده ثبتش می‌کنیم
+                # به هیچ تگی مربوط نیست
                 new_sent.append(item["id"])
                 sent.add(item["id"])
                 continue
 
-            tag_line = f"🏷 {', '.join(tags)}\n\n" if tags else ""
-            text = f"📰 {source_name}\n\n{tag_line}{title_fa}\n\n{desc_fa}"
+            tag_line = f"🏷 {html_escape(', '.join(tags))}\n\n"
+            text = f"📰 {source_name}\n\n{tag_line}{html_escape(translation)}{link_line(item['link'])}"
             send_message(text)
             new_sent.append(item["id"])
             sent.add(item["id"])
@@ -308,17 +350,19 @@ def check_and_send_news(state):
                 continue
 
             tags = classify_news(item["desc"])
+            if tags is None:
+                continue
             if tags == []:
                 new_sent.append(item["id"])
                 sent.add(item["id"])
                 continue
 
-            tag_line = f"🏷 {', '.join(tags)}\n\n" if tags else ""
-            text = f"📰 {source_name}\n\n{tag_line}{item['desc']}"
+            tag_line = f"🏷 {html_escape(', '.join(tags))}\n\n"
+            body = f"📰 {source_name}\n\n{tag_line}{html_escape(item['desc'])}"
             if item.get("photo_url"):
-                send_photo(item["photo_url"], text)
+                send_photo(item["photo_url"], body, item["link"])
             else:
-                send_message(text)
+                send_message(body + link_line(item["link"]))
             new_sent.append(item["id"])
             sent.add(item["id"])
             time.sleep(1)
