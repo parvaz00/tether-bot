@@ -114,16 +114,9 @@ def link_line(url):
     return f'\n\n🔗 <a href="{html_escape(url)}">لینک</a>'
 
 
-# دکمه‌ی ثابت پایین چت (کنار دکمه‌ی قیمت‌ها)
+# دیگه دکمه‌ی ثابت پایین چت نداریم؛ دستورات از طریق منوی بات (آیکون کنار جعبه‌ی پیام) در دسترسن
 NEWS_BUTTON_TEXT = "📰 اخبار روز"
-MAIN_KEYBOARD = {
-    "keyboard": [
-        [{"text": "📊 دریافت قیمت‌ها"}],
-        [{"text": NEWS_BUTTON_TEXT}],
-    ],
-    "resize_keyboard": True,
-    "is_persistent": True,
-}
+REMOVE_KEYBOARD = {"remove_keyboard": True}
 
 
 def process_updates(state):
@@ -151,14 +144,17 @@ def process_updates(state):
         text = message.get("text", "").strip()
 
         if text == "/start":
-            send_message("خوش اومدی! از دکمه‌های پایین استفاده کن:", MAIN_KEYBOARD)
+            send_message(
+                "خوش اومدی! برای روشن/خاموش کردن اخبار روز، از آیکون منو کنار جعبه‌ی پیام، دستور /news رو بزن.",
+                REMOVE_KEYBOARD,
+            )
 
         elif text in ("/news", NEWS_BUTTON_TEXT):
             state["news_mode"] = not state["news_mode"]
             if state["news_mode"]:
-                send_message("🟢 اخبار روز روشن شد؛ در حال بررسی اخبار جدید...", MAIN_KEYBOARD)
+                send_message("🟢 اخبار روز روشن شد؛ در حال بررسی اخبار جدید...")
             else:
-                send_message("🔴 اخبار روز خاموش شد.", MAIN_KEYBOARD)
+                send_message("🔴 اخبار روز خاموش شد.")
 
     return state
 
