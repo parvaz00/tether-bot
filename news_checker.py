@@ -114,15 +114,9 @@ def link_line(url):
     return f'\n\n🔗 <a href="{html_escape(url)}">لینک</a>'
 
 
-# دکمه‌های قابل جمع‌شدن؛ با آیکون کوچک کنار جعبه‌ی پیام باز/بسته میشن (بدون is_persistent)
+# هیچ دکمه‌ی ثابتی نداریم؛ فقط منوی دستورات بات (آیکون کنار جعبه‌ی پیام) استفاده میشه
 NEWS_BUTTON_TEXT = "📰 اخبار روز"
-MAIN_KEYBOARD = {
-    "keyboard": [
-        [{"text": "📊 دریافت قیمت‌ها"}],
-        [{"text": NEWS_BUTTON_TEXT}],
-    ],
-    "resize_keyboard": True,
-}
+REMOVE_KEYBOARD = {"remove_keyboard": True}
 
 
 def process_updates(state):
@@ -151,16 +145,16 @@ def process_updates(state):
 
         if text == "/start":
             send_message(
-                "خوش اومدی! از آیکون کوچیک کنار جعبه‌ی پیام، منو رو باز/بسته کن.",
-                MAIN_KEYBOARD,
+                "خوش اومدی! از آیکون منو کنار جعبه‌ی پیام، دستور /news رو بزن.",
+                REMOVE_KEYBOARD,
             )
 
         elif text in ("/news", NEWS_BUTTON_TEXT):
             state["news_mode"] = not state["news_mode"]
             if state["news_mode"]:
-                send_message("🟢 اخبار روز روشن شد؛ در حال بررسی اخبار جدید...")
+                send_message("🟢 اخبار روز روشن شد؛ در حال بررسی اخبار جدید...", REMOVE_KEYBOARD)
             else:
-                send_message("🔴 اخبار روز خاموش شد.")
+                send_message("🔴 اخبار روز خاموش شد.", REMOVE_KEYBOARD)
 
     return state
 
