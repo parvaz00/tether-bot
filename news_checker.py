@@ -114,9 +114,15 @@ def link_line(url):
     return f'\n\n🔗 <a href="{html_escape(url)}">لینک</a>'
 
 
-# دیگه دکمه‌ی ثابت پایین چت نداریم؛ دستورات از طریق منوی بات (آیکون کنار جعبه‌ی پیام) در دسترسن
+# دکمه‌های قابل جمع‌شدن؛ با آیکون کوچک کنار جعبه‌ی پیام باز/بسته میشن (بدون is_persistent)
 NEWS_BUTTON_TEXT = "📰 اخبار روز"
-REMOVE_KEYBOARD = {"remove_keyboard": True}
+MAIN_KEYBOARD = {
+    "keyboard": [
+        [{"text": "📊 دریافت قیمت‌ها"}],
+        [{"text": NEWS_BUTTON_TEXT}],
+    ],
+    "resize_keyboard": True,
+}
 
 
 def process_updates(state):
@@ -145,8 +151,8 @@ def process_updates(state):
 
         if text == "/start":
             send_message(
-                "خوش اومدی! برای روشن/خاموش کردن اخبار روز، از آیکون منو کنار جعبه‌ی پیام، دستور /news رو بزن.",
-                REMOVE_KEYBOARD,
+                "خوش اومدی! از آیکون کوچیک کنار جعبه‌ی پیام، منو رو باز/بسته کن.",
+                MAIN_KEYBOARD,
             )
 
         elif text in ("/news", NEWS_BUTTON_TEXT):
