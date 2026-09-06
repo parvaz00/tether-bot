@@ -56,6 +56,15 @@ TELEGRAM_CHANNELS = {
     "کانال توییتر بورس": "twitter_bourse",
 }
 
+# فقط برای دستور «خلاصه اخبار» استفاده میشن، جدا از منابع اخبار پیوسته بالا
+SUMMARY_CHANNELS = {
+    "خشتریا/Cata": "khashateria_Cata",
+    "Excition Missile Program": "Excition_missile_program",
+    "Cataphract1": "cataphract1",
+    "P_reatorio": "P_reatorio",
+    "Minas Tirith 2024": "minas_tirith2024",
+}
+
 API = f"https://api.telegram.org/bot{BOT_TOKEN}"
 
 
@@ -116,6 +125,7 @@ def link_line(url):
 
 # هیچ دکمه‌ی ثابتی نداریم؛ فقط منوی دستورات بات (آیکون کنار جعبه‌ی پیام) استفاده میشه
 NEWS_BUTTON_TEXT = "📰 اخبار روز"
+SUMMARY_BUTTON_TEXT = "📄 خلاصه اخبار"
 REMOVE_KEYBOARD = {"remove_keyboard": True}
 
 
@@ -145,7 +155,7 @@ def process_updates(state):
 
         if text == "/start":
             send_message(
-                "خوش اومدی! از آیکون منو کنار جعبه‌ی پیام، دستور /news رو بزن.",
+                "خوش اومدی! از آیکون منو کنار جعبه‌ی پیام، دستور /news یا /summary رو بزن.",
                 REMOVE_KEYBOARD,
             )
 
@@ -155,6 +165,10 @@ def process_updates(state):
                 send_message("🟢 اخبار روز روشن شد؛ در حال بررسی اخبار جدید...", REMOVE_KEYBOARD)
             else:
                 send_message("🔴 اخبار روز خاموش شد.", REMOVE_KEYBOARD)
+
+        elif text in ("/summary", SUMMARY_BUTTON_TEXT):
+            send_message("⏳ در حال آماده‌سازی خلاصه‌ی اخبار امروز...", REMOVE_KEYBOARD)
+            send_news_summary()
 
     return state
 
@@ -179,7 +193,7 @@ ANALYZE_PROMPT = (
 )
 
 
-def _call_avalai(system_prompt, user_text):
+def _call_avalai(system_prompt, user_text, max_chars=3000):
     if not AVALAI_API_KEY or not user_text:
         return None
     try:
@@ -193,11 +207,11 @@ def _call_avalai(system_prompt, user_text):
                 "model": DEEPSEEK_MODEL,
                 "messages": [
                     {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_text[:3000]},
+                    {"role": "user", "content": user_text[:max_chars]},
                 ],
                 "temperature": 0,
             },
-            timeout=30,
+            timeout=45,
         )
         data = resp.json()
         return data["choices"][0]["message"]["content"].strip()
@@ -236,6 +250,28 @@ def classify_news(text):
     if "هیچکدام" in content:
         return []
     return [t for t in TAGS if t in content]
+
+
+def send_news_summary():
+    """برای هر کانال، آخرین خبرهاش رو تو یه پیام جدا، شماره‌گذاری‌شده و با لینک هر خبر می‌فرسته"""
+    any_sent = False
+    for source_name, username in SUMMARY_CHANNELS.items():
+        items = fetch_telegram_channel_items(username)
+        if not items:
+            continue
+
+        lines = []
+        for i, item in enumerate(items, 1):
+            body_text = html_escape(item["desc"][:400])
+            lines.append(f"{i}. {body_text}{link_line(item['link'])}")
+
+        message_text = f"📰 <b>{html_escape(source_name)}</b>\n\n" + "\n\n".join(lines)
+        send_message(message_text)
+        any_sent = True
+        time.sleep(1)
+
+    if not any_sent:
+        send_message("فعلاً پست جدیدی تو این کانال‌ها پیدا نکردم.")
 
 
 def fetch_feed_items(url):
