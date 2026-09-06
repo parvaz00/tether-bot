@@ -253,7 +253,7 @@ def classify_news(text):
 
 
 def send_news_summary():
-    """برای هر کانال، آخرین خبرهاش رو تو یه پیام جدا، شماره‌گذاری‌شده و با لینک هر خبر می‌فرسته"""
+    """برای هر کانال، آخرین خبرهای مرتبط (بر اساس تگ) رو تو یه پیام جدا، شماره‌گذاری‌شده و با لینک هر خبر می‌فرسته"""
     any_sent = False
     for source_name, username in SUMMARY_CHANNELS.items():
         items = fetch_telegram_channel_items(username)
@@ -261,9 +261,18 @@ def send_news_summary():
             continue
 
         lines = []
-        for i, item in enumerate(items, 1):
+        counter = 1
+        for item in items:
+            tags = classify_news(item["desc"])
+            if tags == []:
+                # به هیچ تگی مربوط نیست، رد میشه
+                continue
             body_text = html_escape(item["desc"][:400])
-            lines.append(f"{i}. {body_text}{link_line(item['link'])}")
+            lines.append(f"{counter}. {body_text}{link_line(item['link'])}")
+            counter += 1
+
+        if not lines:
+            continue
 
         message_text = f"📰 <b>{html_escape(source_name)}</b>\n\n" + "\n\n".join(lines)
         send_message(message_text)
@@ -271,7 +280,7 @@ def send_news_summary():
         time.sleep(1)
 
     if not any_sent:
-        send_message("فعلاً پست جدیدی تو این کانال‌ها پیدا نکردم.")
+        send_message("فعلاً خبر مرتبطی تو این کانال‌ها پیدا نکردم.")
 
 
 def fetch_feed_items(url):
