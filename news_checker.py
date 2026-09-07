@@ -58,11 +58,11 @@ TELEGRAM_CHANNELS = {
 
 # فقط برای دستور «خلاصه اخبار» استفاده میشن، جدا از منابع اخبار پیوسته بالا
 SUMMARY_CHANNELS = {
-    "خشتریا/Cata": "khashateria_Cata",
-    "Excition Missile Program": "Excition_missile_program",
+    "خشتریا/Cata": "Khashateria_Cata",
+    "Exciton Missile Program": "Exciton_missile_program",
     "Cataphract1": "cataphract1",
-    "P_reatorio": "P_reatorio",
-    "Minas Tirith 2024": "minas_tirith2024",
+    "P_raetorio": "P_raetorio",
+    "Minas Tirith 2024": "Minas_Tirith2024",
 }
 
 API = f"https://api.telegram.org/bot{BOT_TOKEN}"
