@@ -95,8 +95,8 @@ def send_message(text, reply_markup=None):
         print(f"خطا در ارسال پیام: {e}")
 
 
-def send_photo(photo_url, body_text, url=None):
-    link_part = link_line(url)
+def send_photo(photo_url, body_text, url=None, label="لینک", emoji="🔗"):
+    link_part = link_line(url, label, emoji)
     max_body = 1024 - len(link_part)
     caption = body_text[:max_body] + link_part
     payload = {
@@ -116,11 +116,11 @@ def send_photo(photo_url, body_text, url=None):
         send_message(f"{body_text}{link_part}")
 
 
-def link_line(url):
-    """یه خط با یه کلمه‌ی «لینک» که قابل کلیکه، برای انتهای پیام"""
+def link_line(url, label="لینک", emoji="🔗"):
+    """یه خط قابل‌کلیک برای انتهای پیام؛ برای پست‌های ویدیویی می‌تونیم label رو «ویدیو» بذاریم"""
     if not url:
         return ""
-    return f'\n\n🔗 <a href="{html_escape(url)}">لینک</a>'
+    return f'\n\n{emoji} <a href="{html_escape(url)}">{label}</a>'
 
 
 # هیچ دکمه‌ی ثابتی نداریم؛ فقط منوی دستورات بات (آیکون کنار جعبه‌ی پیام) استفاده میشه
@@ -276,7 +276,8 @@ def send_news_summary():
                 # به هیچ تگی مربوط نیست، رد میشه
                 continue
             body_text = html_escape(item["desc"][:400])
-            lines.append(f"{counter}. {body_text}{link_line(item['link'])}")
+            link_label, link_emoji = ("ویدیو", "🎥") if item.get("has_video") else ("لینک", "🔗")
+            lines.append(f"{counter}. {body_text}{link_line(item['link'], link_label, link_emoji)}")
             counter += 1
 
         if not lines:
@@ -308,6 +309,20 @@ def fetch_feed_items(url):
     return items
 
 
+def clean_signature(text):
+    """حذف امضا/تگ‌های تکراری انتهای پست‌های کانال (منشن‌ها، هشتگ‌ها، کلمه‌ی neocon و مشابه)"""
+    if not text:
+        return text
+    # حذف خط‌هایی که فقط منشن یا هشتگ‌ان (از انتهای متن به سمت بالا)
+    lines = text.split("\n")
+    while lines and re.fullmatch(r"\s*(@\w+|#\w+|[\s@#\w]*neocon[\s@#\w]*)\s*", lines[-1], flags=re.IGNORECASE):
+        lines.pop()
+    text = "\n".join(lines)
+    # حذف کلمه‌ی neocon هر جای دیگه‌ای هم که وسط متن باشه
+    text = re.sub(r"(?i)\bneocon\b", "", text)
+    return text.strip()
+
+
 def fetch_telegram_channel_items(username):
     """خوندن مستقیم آخرین پست‌های عمومی یک کانال تلگرام از t.me/s/username"""
     items = []
@@ -335,6 +350,7 @@ def fetch_telegram_channel_items(username):
             )
             raw_text = text_match.group(1) if text_match else ""
             text = strip_html(raw_text).replace("<br>", "\n")[:900]
+            text = clean_signature(text)
 
             photo_match = re.search(
                 r'tgme_widget_message_photo_wrap[^"]*"\s+style="[^"]*background-image:\s*url\([\'"]?([^\'")]+)[\'"]?\)',
@@ -342,9 +358,11 @@ def fetch_telegram_channel_items(username):
             )
             photo_url = unescape(photo_match.group(1)) if photo_match else None
 
-            posts.append((post_id, text, photo_url))
+            has_video = "tgme_widget_message_video_player" in block or "tgme_widget_message_video" in block
 
-        for post_id, text, photo_url in posts[-5:]:
+            posts.append((post_id, text, photo_url, has_video))
+
+        for post_id, text, photo_url, has_video in posts[-5:]:
             if not text and not photo_url:
                 continue
             items.append(
@@ -354,6 +372,7 @@ def fetch_telegram_channel_items(username):
                     "link": f"https://t.me/{username}/{post_id}",
                     "desc": text,
                     "photo_url": photo_url,
+                    "has_video": has_video,
                 }
             )
     except Exception as e:
@@ -408,10 +427,11 @@ def check_and_send_news(state):
 
             tag_line = f"🏷 {html_escape(', '.join(tags))}\n\n"
             body = f"📰 {source_name}\n\n{tag_line}{html_escape(item['desc'])}"
+            link_label, link_emoji = ("ویدیو", "🎥") if item.get("has_video") else ("لینک", "🔗")
             if item.get("photo_url"):
-                send_photo(item["photo_url"], body, item["link"])
+                send_photo(item["photo_url"], body, item["link"], link_label, link_emoji)
             else:
-                send_message(body + link_line(item["link"]))
+                send_message(body + link_line(item["link"], link_label, link_emoji))
             new_sent.append(item["id"])
             sent.add(item["id"])
             time.sleep(1)
