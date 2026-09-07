@@ -1,5 +1,5 @@
 {
-  "news_mode": true,
+  "news_mode": false,
   "sent_ids": [
     "https://crypto.news/?p=14481630",
     "https://crypto.news/?p=14481656",
@@ -302,5 +302,5 @@
     "tg-updateworlddnews-65498",
     "tg-updateworlddnews-65499"
   ],
-  "last_update_id": 35880766
+  "last_update_id": 35880767
 }
